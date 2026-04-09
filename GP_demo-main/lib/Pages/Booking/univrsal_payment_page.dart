@@ -1,0 +1,806 @@
+// ignore_for_file: deprecated_member_use, curly_braces_in_flow_control_structures, avoid_print
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:healthcareapp_try1/API/user_service.dart';
+import 'package:healthcareapp_try1/Bloc/BookingBloc/confirm_booking_cubit.dart';
+import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
+import 'package:healthcareapp_try1/Pages/Booking/payment_view.dart';
+import 'package:healthcareapp_try1/Widgets/custom_loader1.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
+class BookingConfirmationPage extends StatelessWidget {
+  final HealthcareProvider provider;
+  final String selectedService;
+  final DateTime selectedDate;
+  final String selectedTime;
+  final String slotId;
+  final String token;
+  final double? totalFee;
+  final double? serviceFee;
+  final String providerType; // ✅ جديد
+  final int? hours; // ✅ للنيرس بس
+  final List<String>? labTestsIds;
+  final List<String>? labTestsNames;
+  const BookingConfirmationPage({
+    super.key,
+    required this.provider,
+    required this.selectedService,
+    required this.selectedDate,
+    required this.selectedTime,
+    required this.slotId,
+    required this.token,
+    required this.providerType,
+    this.labTestsIds,
+    this.hours,
+    this.totalFee,
+    this.serviceFee,
+    this.labTestsNames,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => BookingCubit(context.read<UserService>()),
+      child: _BookingConfirmationView(
+        provider: provider,
+        selectedService: selectedService,
+        selectedDate: selectedDate,
+        selectedTime: selectedTime,
+        slotId: slotId,
+        token: token,
+        providerType: providerType,
+        hours: hours,
+        totalFee: totalFee,
+        labTestsIds: labTestsIds, // ✅ ده كان ناقص
+        labTestsNames: labTestsNames, // ✅ جديد
+      ),
+    );
+  }
+}
+
+class _BookingConfirmationView extends StatefulWidget {
+  final HealthcareProvider provider;
+  final String selectedService;
+  final DateTime selectedDate;
+  final String selectedTime;
+  final String slotId;
+  final String token;
+  final String providerType;
+  final int? hours;
+  final List<String>? labTestsIds;
+  final List<String>? labTestsNames;
+  final double? totalFee;
+
+  const _BookingConfirmationView({
+    required this.provider,
+    required this.selectedService,
+    required this.selectedDate,
+    required this.selectedTime,
+    required this.slotId,
+    required this.token,
+    required this.providerType,
+    this.labTestsIds,
+    this.hours,
+    this.labTestsNames,
+    this.totalFee,
+  });
+
+  @override
+  State<_BookingConfirmationView> createState() =>
+      _BookingConfirmationViewState();
+}
+
+class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
+  final TextEditingController _notesController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  String? _savedAddress;
+
+  bool get _isAddressRequired =>
+      (widget.selectedService == "Home Visit" ||
+      widget.providerType == "Nurse");
+
+  bool get _isAddressValid => _addressController.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedAddress();
+
+    _addressController.addListener(() {
+      setState(() {}); // عشان يعمل rebuild للزرار
+    });
+  }
+
+  Future<void> _loadSavedAddress() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // جرب تجيبه بأكتر من طريقة
+    final address =
+        prefs.getString('address') ??
+        prefs.getString('user_address') ??
+        prefs.getString('userAddress') ??
+        '';
+
+    // لو مش لاقيه منفرد، جرب من الـ user JSON
+    if (address.isEmpty) {
+      final userJson =
+          prefs.getString('user') ?? prefs.getString('userData') ?? '';
+      if (userJson.isNotEmpty) {
+        try {
+          final map = jsonDecode(userJson);
+          final fromJson = map['address'] ?? '';
+          if (mounted) setState(() => _savedAddress = fromJson);
+          return;
+        } catch (_) {}
+      }
+    }
+
+    if (mounted) {
+      setState(() => _savedAddress = address.isEmpty ? null : address);
+    }
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<BookingCubit, BookingState>(
+      listener: (context, state) {
+        // 1. حالة التحميل (Loading)
+        if (state is BookingLoading) {
+          showDialog(
+            context: context,
+            barrierDismissible:
+                false, // ميعرفش يقفله بإيده عشان ميحصلش Duplicate للحجز
+            builder: (context) =>
+                const Center(child: CircularProgressIndicator()),
+          );
+        }
+        // 2. حالة النجاح (Success) - اللي إنت كاتبها
+        else if (state is BookingSuccess) {
+          // لو فيه Dialog تحميل مفتوح اقفله الأول
+          if (Navigator.canPop(context)) Navigator.pop(context);
+
+          if (widget.selectedService == "Online" && state.paymentUrl != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    PaymentScreen(paymentUrl: state.paymentUrl!),
+                fullscreenDialog: true,
+              ),
+            ).then((isPaymentSuccessful) {
+              if (isPaymentSuccessful == true) {
+                _showSuccessDialog(context);
+              }
+            });
+          } else {
+            _showSuccessDialog(context);
+          }
+        }
+        // 3. حالة الخطأ (Error)
+        else if (state is BookingError) {
+          // لو فيه Dialog تحميل مفتوح اقفله
+          if (Navigator.canPop(context)) Navigator.pop(context);
+
+          // اظهر رسالة الخطأ للمستخدم (SnackBar)
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+          );
+        }
+      },
+
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: Colors.grey[100],
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text(
+              'Confirm Booking',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Cotta',
+              ),
+            ),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildProviderCard(),
+                const SizedBox(height: 16),
+                _buildDetailsCard(),
+                const SizedBox(height: 16),
+                _buildLabTestsCard(),
+                const SizedBox(height: 16),
+                _buildNotesField(),
+                if (widget.selectedService == "Home Visit" ||
+                    widget.providerType == "Nurse") ...[
+                  const SizedBox(height: 16),
+                  _buildAddressField(),
+                ],
+                const SizedBox(height: 10),
+
+                widget.selectedService == "Online"
+                    ? Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          "Online consultations can be paid for via online payment only",
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 14,
+                            fontFamily: 'Agency',
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : SizedBox(height: 1),
+                const SizedBox(height: 10),
+
+                _buildConfirmButton(context, state),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProviderCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              widget.provider.profilePictureUrl,
+              width: 70,
+              height: 70,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 70,
+                height: 70,
+                color: Colors.blue.shade50,
+                child: const Icon(Icons.person, color: Colors.blue, size: 40),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.provider.name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Cotta',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.provider.subTitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.blue[700],
+                    fontFamily: 'Agency',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.provider.location,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontFamily: 'Agency',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Booking Details',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Cotta',
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildDetailRow(
+            FontAwesomeIcons.briefcaseMedical,
+            'Service',
+            widget.selectedService,
+            Colors.blue,
+          ),
+          const Divider(height: 24),
+          _buildDetailRow(
+            FontAwesomeIcons.calendarDay,
+            'Date',
+            DateFormat('EEEE, dd MMM yyyy').format(widget.selectedDate),
+            Colors.orange,
+          ),
+          const Divider(height: 24),
+          _buildDetailRow(
+            FontAwesomeIcons.clock,
+            'Time',
+            widget.selectedTime.length >= 5
+                ? widget.selectedTime.substring(0, 5)
+                : widget.selectedTime,
+            Colors.green,
+          ),
+
+          if (widget.totalFee != null && widget.totalFee! > 0) ...[
+            const Divider(height: 24),
+            _buildDetailRow(
+              FontAwesomeIcons.moneyBillWave,
+              'Total Amount',
+              '${widget.totalFee!.toStringAsFixed(2)} EGP',
+              Colors.deepPurpleAccent, // لون مميز للسعر
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+  ) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: FaIcon(icon, color: color, size: 16),
+        ),
+        const SizedBox(width: 14),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+                fontFamily: 'Agency',
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Agency',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNotesField() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Notes (Optional)',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Cotta',
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _notesController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: 'Any notes for the doctor...',
+              hintStyle: TextStyle(
+                color: Colors.grey[400],
+                fontFamily: 'Agency',
+              ),
+              filled: true,
+              fillColor: Colors.grey[50],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xff0861dd)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressField() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Home Address',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Cotta',
+                ),
+              ),
+              // ✅ زرار يجيب الـ address المحفوظ
+              if (_savedAddress != null && _savedAddress!.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _addressController.text = _savedAddress!;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xff0861dd).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xff0861dd).withOpacity(0.3),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.my_location,
+                          size: 14,
+                          color: Color(0xff0861dd),
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Use My Address',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xff0861dd),
+                            fontFamily: 'Agency',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _addressController,
+            decoration: InputDecoration(
+              hintText: 'Enter your address...',
+              hintStyle: TextStyle(
+                color: Colors.grey[400],
+                fontFamily: 'Agency',
+              ),
+              filled: true,
+              fillColor: Colors.grey[50],
+              prefixIcon: const Icon(
+                Icons.location_on_outlined,
+                color: Colors.red,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xff0861dd)),
+              ),
+              errorText: _isAddressRequired && !_isAddressValid
+                  ? "Address is required"
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConfirmButton(BuildContext context, BookingState state) {
+    final isLoading = state is BookingLoading;
+
+    final isDisabled = isLoading || (_isAddressRequired && !_isAddressValid);
+
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: isDisabled ? null : () => _onConfirm(context),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xff0861dd),
+          disabledBackgroundColor: Colors.grey.shade300,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        child: isLoading
+            ? const CustomSpinner(color: Colors.white, size: 24)
+            : const Text(
+                'Confirm Booking',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontFamily: 'Agency',
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildLabTestsCard() {
+    // نتحقق لو فيه أسامي تحاليل موجودة
+    if (widget.labTestsNames == null || widget.labTestsNames!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.biotech_rounded, color: Colors.teal, size: 22),
+              SizedBox(width: 8),
+              Text(
+                'Selected Lab Tests',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Cotta',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: widget.labTestsNames!.map((testName) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.teal.withOpacity(0.08), // خلفية خفيفة Teal
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.teal.withOpacity(0.3)),
+                ),
+                child: Text(
+                  testName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.teal, // لون النص Teal
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Agency',
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onConfirm(BuildContext context) {
+    String appointmentType;
+    bool isNurse = widget.providerType == "Nurse";
+    bool isDoctorHomeVisit =
+        widget.providerType == "Doctor" &&
+        widget.selectedService == "Home Visit";
+
+    // 1️⃣ التحقق من العنوان
+    String? address = _addressController.text.trim();
+    if ((isNurse || isDoctorHomeVisit) && address.isEmpty) {
+      if (_savedAddress != null && _savedAddress!.isNotEmpty) {
+        address = _savedAddress;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Address is required for this service")),
+        );
+        return;
+      }
+    }
+
+    // 2️⃣ تحديد نوع الموعد (AppointmentType)
+    switch (widget.selectedService) {
+      case "Clinic Visit":
+        appointmentType = "OnSiteVisit";
+        break;
+      case "Home Visit":
+        appointmentType = isNurse ? "QuickVisit" : "HomeVisit";
+        break;
+      case "Hourly Rate":
+        appointmentType = "HourlyStay";
+        break;
+      case "Lab Visit":
+        appointmentType = "OnSiteVisit";
+        break;
+      case "Online":
+        appointmentType = "Online";
+        break;
+      default:
+        appointmentType = widget.selectedService;
+    }
+
+    // 3️⃣ تحويل الوقت بدقة لتنسيق 24 ساعة (HH:mm:ss)
+    String finalTime;
+    try {
+      // هذه السطر سيحول "5:00 PM" إلى "17:00:00"
+      // ويحول "5:00 AM" إلى "05:00:00"
+      DateTime tempTime = DateFormat.jm().parse(widget.selectedTime);
+      finalTime = DateFormat("HH:mm:ss").format(tempTime);
+    } catch (e) {
+      // إذا فشل التحويل (مثلاً الوقت مخزن أصلاً بصيغة 24 ساعة)
+      String rawTime = widget.selectedTime.split(
+        ' ',
+      )[0]; // نأخذ الجزء الأول فقط
+      if (rawTime.length == 4)
+        rawTime = "0$rawTime"; // إضافة صفر حماية مثل 5:00 تصبح 05:00
+      finalTime = rawTime.contains(':') && rawTime.length <= 5
+          ? "$rawTime:00"
+          : rawTime;
+    }
+
+    print(
+      "Final Time to be sent: $finalTime",
+    ); // تأكد من رؤية 17:00:00 في الـ Log
+
+    // 4️⃣ إرسال الطلب
+    context.read<BookingCubit>().confirmBooking(
+      providerId: widget.provider.id,
+      slotId: widget.providerType == "Lab" ? "" : widget.slotId,
+      appointmentType: appointmentType,
+      startTime: finalTime, // التأكد أن الوقت يقع داخل الـ Shift المختار
+      token: widget.token,
+      providerType: widget.providerType,
+      notes: _notesController.text.trim(),
+      address: address,
+      hours: widget.hours ?? 1,
+      labTestsIds: widget.labTestsIds,
+      date: widget.selectedDate.toIso8601String().split('T')[0],
+    );
+  }
+
+  void _showSuccessDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("Booking Confirmed!"),
+        content: const Text(
+          "Your appointment and payment have been processed successfully.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // بيرجع لأول شاشة خالص في التطبيق (Home)
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+            child: const Text("Back to Home"),
+          ),
+        ],
+      ),
+    );
+  }
+}

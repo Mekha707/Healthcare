@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, file_names, avoid_print, dead_code, unnecessary_null_comparison, unnecessary_to_list_in_spreads
+// ignore_for_file: deprecated_member_use, file_names, avoid_print, dead_code, unnecessary_null_comparison, unnecessary_to_list_in_spreads, unused_element, unused_local_variable
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,6 +9,7 @@ import 'package:healthcareapp_try1/Models/DetailsModel.dart/nurse_details_model.
 import 'package:healthcareapp_try1/Models/Users_Models/lab_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
 import 'package:healthcareapp_try1/Pages/Booking/univrsal_payment_page.dart';
+import 'package:healthcareapp_try1/Widgets/hour_selection_nurse.dart';
 import 'package:intl/intl.dart';
 import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/Bloc/DetailsBoc/universal_details_cubit.dart';
@@ -65,6 +66,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
   String? selectedTime;
   String? selectedExactHour;
+  int? countSelectedhours;
   String selectedService = "";
   String? selectedSlotId;
 
@@ -97,16 +99,36 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
   bool get isTimeSelected => selectedDate != null && selectedTime != null;
   final ScrollController _scrollController = ScrollController();
+
   bool get canProceed {
     if (widget.provider.providerType == "Lab") {
       return selectedService.isNotEmpty &&
           selectedTests.isNotEmpty &&
           selectedDate != null &&
           selectedTime != null;
-    } else {
-      // Doctor or Nurse
+    }
+
+    if (widget.provider.providerType == "Nurse") {
+      // حالة الـ Hourly Rate
+      if (selectedService == "Hourly Rate") {
+        return selectedDate != null &&
+            selectedTime != null &&
+            countSelectedhours != null &&
+            countSelectedhours! > 0;
+      }
+      if (selectedExactHour != "Hourly Rate") {
+        return selectedDate != null &&
+            selectedTime != null &&
+            countSelectedhours != null &&
+            countSelectedhours! > 0;
+      }
+
+      // باقي خدمات الممرض
       return selectedDate != null && selectedTime != null;
     }
+
+    // Doctor
+    return selectedDate != null && selectedTime != null;
   }
 
   double get totalTestsPrice {
@@ -153,7 +175,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
         case "Home Visit":
           return nurseDetails.homeVisitFee;
         case "Hourly Rate":
-          return nurseDetails.hourPrice;
+          return (nurseDetails.hourPrice) * (countSelectedhours ?? 1);
         default:
           return 0;
       }
@@ -194,6 +216,9 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
   @override
   Widget build(BuildContext context) {
+    bool isNurseHourly =
+        widget.provider.providerType == "Nurse" &&
+        selectedService == "Hourly Rate";
     return Scaffold(
       backgroundColor: Colors.grey[100],
 
@@ -212,16 +237,19 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(scale: animation, child: child),
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (child, animation) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.3),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: FadeTransition(opacity: animation, child: child),
                 );
               },
               child: _buildGuidanceBar(
                 key: ValueKey(
-                  '${selectedService}_${selectedDate}_$selectedTime',
+                  '${selectedService}_${countSelectedhours}_${selectedDate}_$selectedTime',
                 ),
               ),
             ),
@@ -307,23 +335,44 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                         const SizedBox(height: 15),
                         _buildFeesSection(context, data),
                         const SizedBox(height: 10),
-                        // ------------------------------------------
-                        if (widget.provider.providerType == "Lab" &&
-                            selectedService.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Text(
-                              "Selected Service: $selectedService",
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue,
-                                fontFamily: 'Agency',
-                              ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            "Selected Service: $selectedService",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue,
+                              fontFamily: 'Agency',
                             ),
                           ),
+                        ),
 
-                        if (selectedService != "" &&
+                        if (selectedService == "Hourly Rate" &&
+                            widget.provider.providerType == "Nurse") ...[
+                          _buildSectionTitle("Select Number of Hours"),
+                          const SizedBox(height: 10),
+                          HourSelectionWidget(
+                            onHourSelected: (hour) {
+                              setState(() => countSelectedhours = hour);
+                            },
+                          ),
+                          if (countSelectedhours != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Text(
+                                "Selected Hours: $countSelectedhours",
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blueGrey,
+                                  fontFamily: 'Agency',
+                                ),
+                              ),
+                            ),
+                        ],
+
+                        if (selectedService.isNotEmpty &&
                             widget.provider.providerType != "Lab" &&
                             (data is DoctorDetailsModel ||
                                 data is NurseDetailsModel)) ...[
@@ -359,6 +408,22 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                           ),
                         ],
 
+                        if (selectedService == "Hourly Rate" &&
+                            widget.provider.providerType == "Nurse" &&
+                            countSelectedhours != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Text(
+                              "Total Price: ${(getSelectedServiceFee(data)).toStringAsFixed(2)} EGP",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                                fontFamily: 'Cotta',
+                              ),
+                            ),
+                          ),
+
                         // --- الجزء الجديد الخاص بالتحاليل (Tests) ---
                         if (widget.provider.providerType == "Lab" &&
                             data is LabDetailsModel)
@@ -372,12 +437,11 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                               ), // سنقوم بإنشاء هذا التابع الآن
                             ],
                           ),
-                        const SizedBox(height: 10),
 
                         if (widget.provider.providerType == "Lab" &&
                             selectedTests.isNotEmpty)
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.only(bottom: 10, top: 10),
                             child: Text(
                               "Selected Tests: ${selectedTests.length} item(s)",
                               style: const TextStyle(
@@ -388,7 +452,6 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                               ),
                             ),
                           ),
-                        const SizedBox(height: 15),
 
                         if (widget.provider.providerType == "Lab" &&
                             data is LabDetailsModel) ...[
@@ -458,37 +521,6 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                             _buildSectionTitle("Available Times"),
                             const SizedBox(height: 10),
 
-                            // عرض الساعات المتاحة
-                            // Wrap(
-                            //   spacing: 8,
-                            //   runSpacing: 8,
-                            //   children:
-                            //       _generateTimeSlots(
-                            //         data.openingTime,
-                            //         data.closingTime,
-                            //         selectedDate,
-                            //       ).map((time) {
-                            //         bool isSelected = selectedTime == time;
-                            //         return ChoiceChip(
-                            //           label: Text(time),
-                            //           selected: isSelected,
-                            //           backgroundColor: Colors.amber,
-                            //           selectedColor: Colors.teal,
-                            //           disabledColor: Colors.grey.shade200,
-                            //           onSelected: (selected) {
-                            //             setState(() {
-                            //               selectedTime = time;
-                            //               selectedExactHour = time;
-                            //             });
-                            //           },
-                            //           labelStyle: TextStyle(
-                            //             color: isSelected
-                            //                 ? Colors.white
-                            //                 : Colors.black,
-                            //           ),
-                            //         );
-                            //       }).toList(),
-                            // ),
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
@@ -553,30 +585,15 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                           if (selectedService.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "Service: $selectedService",
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.blue,
-                                      fontFamily: 'Agency',
-                                    ),
-                                  ),
-                                  Text(
-                                    selectedService == "Home Visit"
-                                        ? "\$${(data.homeVisitFee).toStringAsFixed(2)}"
-                                        : "Free", // أو السعر الافتراضي للعيادة
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                ],
+                              child: Text(
+                                selectedService == "Home Visit"
+                                    ? "\$${(data.homeVisitFee).toStringAsFixed(2)}"
+                                    : "Free", // أو السعر الافتراضي للعيادة
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
                               ),
                             ),
 
@@ -709,6 +726,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                         selectedTime:
                                             selectedExactHour ?? selectedTime!,
                                         slotId: selectedSlotId ?? '',
+                                        hours: countSelectedhours ?? 0,
                                         totalFee:
                                             (widget.provider.providerType ==
                                                 "Lab"
@@ -1552,11 +1570,15 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
     bool hasService = selectedService.isNotEmpty;
     bool hasTests = selectedTests.isNotEmpty;
     bool hasTime = (selectedDate != null && selectedTime != null);
+    bool hasHours = countSelectedhours != null && countSelectedhours! > 0;
 
     // تحديث منطق الجاهزية: المعمل الآن يحتاج (خدمة + تحاليل + وقت)
     bool isReady = isLab
         ? (hasService && hasTests && hasTime)
-        : (hasService && hasTime);
+        : (widget.provider.providerType == "Nurse" &&
+                  selectedService == "Hourly Rate"
+              ? (hasService && hasHours && hasTime)
+              : (hasService && hasTime));
 
     Color mainColor = _getProviderColor(isReady, hasService, hasTests);
     Color stepColor = isReady ? Colors.green : mainColor;
@@ -1586,11 +1608,26 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
         progressValue = 0.25;
       }
     } else {
-      // --- تدفق الخطوات لغير المعامل (دكتور/ممرض) كما هو ---
+      bool isNurseHourly =
+          widget.provider.providerType == "Nurse" &&
+          selectedService == "Hourly Rate";
+
       if (isReady) {
-        title = "Step 3: Ready to Book!";
+        title = isNurseHourly
+            ? "Step 4: Ready to Book!"
+            : "Step 3: Ready to Book!";
+
         subTitle = "All set! Confirm your appointment.";
         progressValue = 1.0;
+      } else if (isNurseHourly && hasService && hasHours) {
+        title = "Step 3: Pick Time";
+        subTitle = "Now choose a suitable time slot.";
+        progressValue = 0.75;
+        stepColor = Colors.orange;
+      } else if (isNurseHourly && hasService) {
+        title = "Step 2: Select Number of Hours";
+        subTitle = "حدد عدد الساعات المطلوبة للخدمة.";
+        progressValue = 0.50;
       } else if (hasService) {
         title = "Step 2: Pick Time";
         subTitle = "Great! Now choose a suitable time slot.";
@@ -1620,17 +1657,6 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
       ),
       child: Row(
         children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: FaIcon(
-              isReady
-                  ? FontAwesomeIcons.circleCheck
-                  : _getProviderIcon(isReady: isReady, hasService: hasService),
-              key: ValueKey(isReady || title == "Step 3: Select Time & Date"),
-              color: stepColor,
-              size: 26,
-            ),
-          ),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
@@ -1713,5 +1739,31 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
     if (hasService) return Colors.blue;
     if (hasService && hasTests) return Colors.orange;
     return const Color(0xff0861dd); // اللون الأساسي للتطبيق
+  }
+
+  int getCurrentStep() {
+    bool isLab = widget.provider.providerType == "Lab";
+    bool isNurseHourly =
+        widget.provider.providerType == "Nurse" &&
+        selectedService == "Hourly Rate";
+
+    if (isLab) {
+      if (selectedService.isEmpty) return 1;
+      if (selectedTests.isEmpty) return 2;
+      if (selectedDate == null || selectedTime == null) return 3;
+      return 4;
+    }
+
+    if (isNurseHourly) {
+      if (selectedService.isEmpty) return 1;
+      if (countSelectedhours == null) return 2;
+      if (selectedDate == null || selectedTime == null) return 3;
+      return 4;
+    }
+
+    // Doctor / Nurse normal
+    if (selectedService.isEmpty) return 1;
+    if (selectedDate == null || selectedTime == null) return 2;
+    return 3;
   }
 }

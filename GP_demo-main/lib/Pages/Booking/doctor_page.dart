@@ -1,10 +1,7 @@
-// // ignore_for_file: deprecated_member_use
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
-import 'package:skeletonizer/skeletonizer.dart'; // ✅ استيراد المكتبة
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_event.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_state.dart';
@@ -29,6 +26,7 @@ class _DoctorPage extends State<DoctorPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    // نطلب البيانات عند الدخول للصفحة
     context.read<DoctorsBloc>().add(FetchDoctors());
   }
 
@@ -52,7 +50,7 @@ class _DoctorPage extends State<DoctorPage> {
     return BlocConsumer<DoctorsBloc, DoctorsState>(
       listener: (context, state) {},
       builder: (context, state) {
-        // 1. حالة الخطأ (Error)
+        // 1. حالة الخطأ - نعرض واجهة الخطأ فوراً
         if (state is DoctorsError) {
           return Center(
             child: Column(
@@ -79,33 +77,34 @@ class _DoctorPage extends State<DoctorPage> {
           );
         }
 
-        // 2. استخدام Skeletonizer في حالتي التحميل الأولي (DoctorsLoading) أو وجود البيانات (DoctorsLoaded)
-        // الفكرة هنا أننا نمرر بيانات "وهمية" للـ Skeletonizer أثناء التحميل
-        final isLoading = state is DoctorsLoading;
+        // 2. إدارة الحالات (التحميل vs البيانات الجاهزة)
+        // الحالة تكون جاهزة فقط إذا كانت DoctorsLoaded
+        final bool isReady = state is DoctorsLoaded;
+        final bool isLoading =
+            state is DoctorsLoading || state is DoctorsInitial;
 
-        // إذا كان يحمل، نستخدم قائمة وهمية، وإذا انتهى نستخدم القائمة الحقيقية
-        final doctorsList = isLoading
-            ? List.generate(
+        // تجهيز القائمة: إذا كانت جاهزة نأخذ البيانات، وإلا ننشئ بيانات وهمية للـ Skeletonizer
+        final List<Doctor> doctorsList = isReady
+            ? state.filteredDoctors
+            : List.generate(
                 5,
                 (index) => Doctor(
                   id: 'loading',
-                  name: 'Doctor Name Placeholder', // نص وهمي
-                  specialty: 'Specialty',
+                  name: 'Doctor Name Placeholder',
+                  specialty: 'Medical Specialty',
                   profilePictureUrl: '',
-                  title: '',
-                  address: '',
+                  title: 'Specialist',
+                  address: 'Street Address, City',
                   fee: 0,
                   rating: 0,
                   ratingsCount: 0,
                   allowHome: false,
-                  allowOnline: false, // سيبه فاضي والـ Skeletonizer هيتعامل
-                  // باقي الحقول المطلوبة في الـ Constructor بتاعك...
+                  allowOnline: false,
                 ),
-              )
-            : (state as DoctorsLoaded).filteredDoctors;
+              );
 
         return Skeletonizer(
-          enabled: isLoading, // ✅ يعمل الهيكل فقط عندما تكون الحالة Loading
+          enabled: isLoading,
           child: RefreshIndicator(
             onRefresh: () async {
               context.read<DoctorsBloc>().add(RefreshDoctors());
@@ -113,15 +112,17 @@ class _DoctorPage extends State<DoctorPage> {
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
+                // زر الفلترة
                 CustomFilterButton(
                   isSelected: isFilterd,
                   onTap: () => setState(() => isFilterd = !isFilterd),
                   activeColor: const Color(0xff131ab9),
                 ),
 
+                // قسم البحث (يظهر ويختفي بالأنيميشن)
                 SliverAnimatedOpacity(
                   opacity: isFilterd ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 800),
+                  duration: const Duration(milliseconds: 400),
                   sliver: isFilterd
                       ? SliverToBoxAdapter(
                           child: SearchForDoctor(
@@ -143,39 +144,39 @@ class _DoctorPage extends State<DoctorPage> {
 
                 const SliverToBoxAdapter(child: SizedBox(height: 10)),
 
-                // عرض النتائج أو رسالة "لا يوجد"
-                (!isLoading && doctorsList.isEmpty)
-                    ? const SliverFillRemaining(
-                        child: Center(
-                          child: Text('No doctors found matching your search.'),
-                        ),
-                      )
-                    : SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            // التعامل مع الـ Load More
-                            if (!isLoading && index == doctorsList.length) {
-                              return const Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            }
+                // عرض النتائج
+                if (isReady && doctorsList.isEmpty)
+                  const SliverFillRemaining(
+                    child: Center(
+                      child: Text('No doctors found matching your search.'),
+                    ),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        // عرض مؤشر التحميل في الأسفل عند الـ Pagination
+                        if (isReady && index == doctorsList.length) {
+                          return const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
 
-                            final doctor = doctorsList[index];
-                            return UniversalMedicalCard(
-                              provider: doctor as HealthcareProvider,
-                            );
-                          },
-                          childCount: isLoading
-                              ? 5 // عدد الكروت الوهمية أثناء التحميل
-                              : doctorsList.length +
-                                    ((state as DoctorsLoaded).isLoadingMore
-                                        ? 1
-                                        : 0),
-                        ),
-                      ),
+                        final doctor = doctorsList[index];
+                        return UniversalMedicalCard(
+                          // التأكد من عمل Cast للموديل إذا كان الـ Card يتوقع HealthcareProvider
+                          provider: doctor as HealthcareProvider,
+                        );
+                      },
+                      // تحديد عدد العناصر بدقة لتجنب الـ RangeError
+                      childCount: isReady
+                          ? (doctorsList.length + (state.isLoadingMore ? 1 : 0))
+                          : doctorsList.length,
+                    ),
+                  ),
+
+                // مساحة إضافية في الأسفل (مثلاً للـ Navigation Bar)
                 const SliverToBoxAdapter(child: SizedBox(height: 150)),
               ],
             ),

@@ -13,6 +13,7 @@ import 'package:healthcareapp_try1/Models/DetailsModel.dart/doctor_details_model
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/lab_details_model.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/nurse_details_model.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/review_model.dart';
+import 'package:healthcareapp_try1/Models/Logic/exception_class.dart';
 import 'package:healthcareapp_try1/Models/Logic/paginated_list.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
@@ -459,19 +460,43 @@ class UserService {
   }
 
   // --- Error Handling (مكان واحد لكل الخدمات) ---
-  Exception _handleError(DioException e) {
+  dynamic _handleError(DioException e) {
+    log("Full Error: ${e.response?.data}"); // لمساعدتك في التطوير
+
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.receiveTimeout:
-        return Exception('انتهت مهلة الاتصال، تحقق من الإنترنت');
+      case DioExceptionType.sendTimeout:
+        throw NetworkException();
+
       case DioExceptionType.badResponse:
         final statusCode = e.response?.statusCode;
-        final message = e.response?.data?['message'] ?? 'حدث خطأ من السيرفر';
-        return Exception('خطأ $statusCode: $message');
+        final data = e.response?.data;
+
+        // استخراج رسالة الخطأ من السيرفر (تختلف حسب تصميم الـ API بتاعك)
+        String serverMessage = data is Map
+            ? (data['message'] ?? data['title'] ?? "حدث خطأ غير متوقع")
+            : "خطأ غير معروف";
+
+        if (statusCode == 401) throw UnAuthorizedException();
+        if (statusCode == 400) throw ValidationException(serverMessage);
+        if (statusCode == 404) {
+          throw AppException("المورد المطلوب غير موجود", 404);
+        }
+        if (statusCode! >= 500) {
+          throw AppException("مشكلة في السيرفر، جرب لاحقاً", 500);
+        }
+
+        throw AppException(serverMessage, statusCode);
+
+      case DioExceptionType.cancel:
+        throw AppException("تم إلغاء الطلب");
+
       case DioExceptionType.connectionError:
-        return Exception('لا يوجد اتصال بالإنترنت');
+        throw NetworkException();
+
       default:
-        return Exception('حدث خطأ غير متوقع');
+        throw AppException("حدث خطأ غير متوقع: ${e.message}");
     }
   }
 
@@ -479,7 +504,10 @@ class UserService {
     if (response.isSuccess && response.value != null) {
       return response.value!;
     } else {
-      throw Exception(response.error?.description ?? 'Unknown error');
+      // استخراج الوصف من الـ Model بتاعك
+      final errorMsg =
+          response.error?.description ?? 'حدث خطأ أثناء تحميل التفاصيل';
+      throw AppException(errorMsg);
     }
   }
 

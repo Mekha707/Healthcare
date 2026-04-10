@@ -23,6 +23,8 @@ class LabsBloc extends Bloc<LabsEvent, LabsState> {
     _currentPage = 1;
 
     try {
+      await Future.delayed(const Duration(milliseconds: 800));
+
       // الـ result هنا نوعه List<LabModel> مش Object
       final List<LabModel> result = await _labService.getLabs(
         page: _currentPage,
@@ -56,6 +58,8 @@ class LabsBloc extends Bloc<LabsEvent, LabsState> {
     _currentPage++;
 
     try {
+      await Future.delayed(const Duration(milliseconds: 800));
+
       // تعديل هنا كمان: شيل .items
       final result = await _labService.getLabs(page: _currentPage);
 
@@ -82,6 +86,8 @@ class LabsBloc extends Bloc<LabsEvent, LabsState> {
     _currentPage = 1;
 
     try {
+      await Future.delayed(const Duration(milliseconds: 800));
+
       final result = await _labService.getLabs(page: _currentPage);
       emit(
         LabsLoaded(
@@ -98,6 +104,8 @@ class LabsBloc extends Bloc<LabsEvent, LabsState> {
   Future<void> _onFilter(FilterLabs event, Emitter<LabsState> emit) async {
     emit(LabsLoading());
     try {
+      await Future.delayed(const Duration(milliseconds: 800));
+
       final List<LabModel> labs = await _labService.getLabs(
         page: 1,
         name: event.name,

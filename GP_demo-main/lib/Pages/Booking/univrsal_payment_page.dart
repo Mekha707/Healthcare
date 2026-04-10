@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, curly_braces_in_flow_control_structures, avoid_print
+// ignore_for_file: deprecated_member_use, curly_braces_in_flow_control_structures, avoid_print, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +8,7 @@ import 'package:healthcareapp_try1/Bloc/BookingBloc/confirm_booking_cubit.dart';
 import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 import 'package:healthcareapp_try1/Pages/Booking/payment_view.dart';
 import 'package:healthcareapp_try1/Widgets/custom_loader1.dart';
+import 'package:healthcareapp_try1/Widgets/success_lottie_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -161,8 +162,7 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
             context: context,
             barrierDismissible:
                 false, // ميعرفش يقفله بإيده عشان ميحصلش Duplicate للحجز
-            builder: (context) =>
-                const Center(child: CircularProgressIndicator()),
+            builder: (context) => const Center(child: SizedBox()),
           );
         }
         // 2. حالة النجاح (Success) - اللي إنت كاتبها
@@ -786,18 +786,42 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
     showDialog(
       context: context,
       barrierDismissible: false,
+
       builder: (context) => AlertDialog(
-        title: const Text("Booking Confirmed!"),
-        content: const Text(
+        backgroundColor: Colors.white,
+        title: Column(
+          children: [
+            SuccessLottieWidget(),
+            Text("Booking Confirmed!", style: TextStyle(fontFamily: 'Cotta')),
+          ],
+        ),
+        content: Text(
           "Your appointment and payment have been processed successfully.",
+          textAlign: TextAlign.center,
+          style: TextStyle(fontFamily: 'Agency'),
         ),
         actions: [
           TextButton(
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all(
+                const Color(0xff0861dd),
+              ),
+              foregroundColor: MaterialStateProperty.all(Colors.white),
+              shape: MaterialStateProperty.all(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
             onPressed: () {
               // بيرجع لأول شاشة خالص في التطبيق (Home)
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
-            child: const Text("Back to Home"),
+            child: const Text(
+              "Back to Booking Page",
+              style: TextStyle(
+                fontFamily: 'Agency',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),

@@ -29,6 +29,7 @@ class DoctorsBloc extends Bloc<DoctorsEvent, DoctorsState> {
     _clearFilters(); // تصفير الفلاتر عند البداية من جديد
 
     try {
+      await Future.delayed(const Duration(milliseconds: 800));
       final result = await _apiService.getDoctors(page: _currentPage);
       emit(
         DoctorsLoaded(
@@ -55,9 +56,10 @@ class DoctorsBloc extends Bloc<DoctorsEvent, DoctorsState> {
     _currentPage = 1; // إعادة تصغير الصفحة لأول صفحة في البحث
 
     // اختياري: إظهار لودر خفيف أو البدء في طلب البيانات مباشرة
-    // emit(DoctorsLoading());
+    emit(DoctorsLoading());
 
     try {
+      await Future.delayed(const Duration(milliseconds: 800));
       final result = await _apiService.getDoctors(
         page: _currentPage,
         name: _activeFilterName,

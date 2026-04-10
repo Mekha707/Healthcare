@@ -33,6 +33,8 @@ class NursesBloc extends Bloc<NursesEvent, NursesState> {
     Emitter<NursesState> emit,
   ) async {
     try {
+      await Future.delayed(const Duration(milliseconds: 800));
+
       final result = await _nurseService.getNurses(
         page: 1,
         name: _currentName,
@@ -59,6 +61,7 @@ class NursesBloc extends Bloc<NursesEvent, NursesState> {
   ) async {
     emit(NursesLoading());
     try {
+      await Future.delayed(const Duration(milliseconds: 800));
       final result = await _nurseService.getNurses(page: 1);
       emit(
         NursesLoaded(

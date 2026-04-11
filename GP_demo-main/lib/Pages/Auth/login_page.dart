@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/LoginBloc/login_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/LoginBloc/login_event.dart';
 import 'package:healthcareapp_try1/Buttons/buttons.dart';
@@ -9,8 +10,6 @@ import 'package:healthcareapp_try1/Buttons/icons_heart_stet.dart';
 import 'package:healthcareapp_try1/Pages/Auth/FormFields_Login_Register.dart';
 
 import '../../Bloc/Auth_Bloc/LoginBloc/login_state.dart';
-// import 'package:healthcareapp_try1/Buttons/buttons.dart';
-// import 'package:healthcareapp_try1/Widgets/FormFields_Login_Register.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -74,15 +73,15 @@ class _LoginPageState extends State<LoginPage> {
                 child: BlocConsumer<LoginBloc, LoginState>(
                   listener: (context, state) {
                     if (state is LoginSuccess) {
-                      // في حال النجاح ننتقل للصفحة الرئيسية
                       Navigator.pushReplacementNamed(context, 'Home');
                     } else if (state is LoginFailure) {
-                      // في حال الفشل نظهر رسالة خطأ
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(state.error),
-                          backgroundColor: Colors.red,
-                        ),
+                      Fluttertoast.showToast(
+                        msg: state.error,
+                        toastLength: Toast.LENGTH_LONG,
+                        gravity: ToastGravity.BOTTOM,
+                        backgroundColor: Colors.red.shade700,
+                        textColor: Colors.white,
+                        fontSize: 14,
                       );
                     }
                   },

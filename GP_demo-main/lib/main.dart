@@ -12,6 +12,7 @@ import 'package:healthcareapp_try1/Bloc/Auth_Bloc/LoginBloc/login_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/Patient_Profile.dart/patient_profile_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/RegisterationBloc/register_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/DetailsBoc/universal_details_cubit.dart';
+import 'package:healthcareapp_try1/Bloc/MedicalRecordBloc/medical_record_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/MyBookingBloc/mybooking_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/NavigationBloc/navigation_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_bloc.dart';
@@ -71,6 +72,8 @@ void main() async {
           create: (context) => HealthcareDetailsCubit(UserService()),
         ),
         BlocProvider(create: (context) => TestBloc(UserService())),
+        BlocProvider(create: (context) => MedicalRecordCubit(authService)),
+
         RepositoryProvider<UserService>(create: (_) => UserService()),
       ],
       child: MainApp(isLoggedIn: isLoggedIn),

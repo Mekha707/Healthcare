@@ -3,9 +3,11 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:healthcareapp_try1/API/auth_service.dart';
 import 'package:healthcareapp_try1/API/logout_service.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/Patient_Profile.dart/patient_profile_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/Patient_Profile.dart/patient_profile_state.dart';
+import 'package:healthcareapp_try1/Bloc/MedicalRecordBloc/medical_record_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/NavigationBloc/navigation_bloc.dart';
 // استيراد الـ Bloc الجديد والصفحة
 
@@ -17,6 +19,7 @@ import 'package:healthcareapp_try1/Pages/Booking/my_booking_page.dart';
 import 'package:healthcareapp_try1/Pages/Home/ambulance_page.dart';
 import 'package:healthcareapp_try1/Pages/Home/homepage_content.dart';
 import 'package:healthcareapp_try1/Pages/Home/profile_page.dart';
+import 'package:healthcareapp_try1/Pages/MedicalRecord/medical_record_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -122,7 +125,7 @@ class _HomePageState extends State<HomePage> {
                 padding: EdgeInsets.zero,
                 children: [
                   SizedBox(
-                    height: 85,
+                    height: 90,
                     child: DrawerHeader(
                       decoration: BoxDecoration(color: Color(0xff0861dd)),
                       child: Center(
@@ -189,6 +192,38 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   ListTile(
+                    leading: Icon(
+                      FontAwesomeIcons.fileMedical,
+                      color: Colors.grey.shade700,
+                    ),
+                    title: Padding(
+                      padding: const EdgeInsets.only(top: 7),
+                      child: Text(
+                        "My Medical Record",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade700,
+                          fontFamily: 'Agency',
+                        ),
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BlocProvider(
+                            create: (_) =>
+                                MedicalRecordCubit(AuthService())
+                                  ..fetchMedicalRecord(),
+                            child: const MedicalRecordPage(),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  ListTile(
                     leading: Icon(Icons.chat, color: Colors.grey.shade700),
                     title: Text(
                       "My Conversations",
@@ -201,6 +236,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     onTap: () {},
                   ),
+
                   ListTile(
                     leading: Icon(Icons.lock, color: Colors.grey.shade700),
                     title: Padding(

@@ -682,7 +682,6 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                       .toList();
 
                                   // جيب الـ slotId
-                                  // ignore: unused_local_variable
                                   String slotId = "";
                                   if (detailsState.providerData
                                       is DoctorDetailsModel) {

@@ -9,6 +9,7 @@ import 'package:bloc_concurrency/bloc_concurrency.dart'; // 👈 السطر ده
 class DoctorsBloc extends Bloc<DoctorsEvent, DoctorsState> {
   final UserService _apiService;
   int _currentPage = 1;
+  String? _lastQueryKey;
 
   // حفظ الفلاتر الحالية لضمان استمراريتها عند الـ Pagination
   String? _activeFilterName;
@@ -44,30 +45,81 @@ class DoctorsBloc extends Bloc<DoctorsEvent, DoctorsState> {
     }
   }
 
+  // Future<void> _onFilter(
+  //   FilterDoctors event,
+  //   Emitter<DoctorsState> emit,
+  //   final newQueryKey =
+  //   "${event.name}_${event.specialtyId}_${event.cityName}_${event.serviceType}";
+  // ) async {
+  //   // 1. تحديث المتغيرات الداخلية فوراً بالقيم الجديدة القادمة من الـ UI
+  //   _activeFilterName = event.name;
+  //   _activeFilterSpecialtyId = event.specialtyId;
+  //   _activeFilterLocation = event.cityName;
+  //   _activeFilterServiceType = event.serviceType;
+  //   _currentPage = 1; // إعادة تصغير الصفحة لأول صفحة في البحث
+
+  //   // اختياري: إظهار لودر خفيف أو البدء في طلب البيانات مباشرة
+  //   emit(DoctorsLoading());
+
+  //   try {
+  //     await Future.delayed(const Duration(milliseconds: 800));
+  //     final result = await _apiService.getDoctors(
+  //       page: _currentPage,
+  //       name: _activeFilterName,
+  //       specialtyId: event.specialtyId,
+  //       location: _activeFilterLocation,
+  //       serviceType: _activeFilterServiceType != null
+  //           ? (_activeFilterServiceType!)
+  //           : null,
+  //     );
+
+  //     emit(
+  //       DoctorsLoaded(
+  //         allDoctors: result.items,
+  //         filteredDoctors: result.items,
+  //         hasNextPage: result.hasNextPage,
+  //         currentPage: _currentPage,
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     emit(DoctorsError("Search Error: ${e.toString()}"));
+  //   }
+  // }
+
   Future<void> _onFilter(
     FilterDoctors event,
     Emitter<DoctorsState> emit,
   ) async {
-    // 1. تحديث المتغيرات الداخلية فوراً بالقيم الجديدة القادمة من الـ UI
+    final newQueryKey =
+        "${event.name}_${event.specialtyId}_${event.cityName}_${event.serviceType}";
+
+    // 🔥 يمنع إعادة نفس الريكوست
+    if (_lastQueryKey == newQueryKey) return;
+    _lastQueryKey = newQueryKey;
+
     _activeFilterName = event.name;
     _activeFilterSpecialtyId = event.specialtyId;
     _activeFilterLocation = event.cityName;
     _activeFilterServiceType = event.serviceType;
-    _currentPage = 1; // إعادة تصغير الصفحة لأول صفحة في البحث
+    _currentPage = 1;
 
-    // اختياري: إظهار لودر خفيف أو البدء في طلب البيانات مباشرة
-    emit(DoctorsLoading());
+    // ❌ بدل ما تمسح UI
+    // emit(DoctorsLoading());
+
+    // ✅ لو فيه داتا قبل كده، خليه loading خفيف
+    if (state is DoctorsLoaded) {
+      emit((state as DoctorsLoaded).copyWith(isRefreshing: true));
+    } else {
+      emit(DoctorsLoading());
+    }
 
     try {
-      await Future.delayed(const Duration(milliseconds: 800));
       final result = await _apiService.getDoctors(
         page: _currentPage,
         name: _activeFilterName,
-        specialtyId: event.specialtyId,
+        specialtyId: _activeFilterSpecialtyId,
         location: _activeFilterLocation,
-        serviceType: _activeFilterServiceType != null
-            ? (_activeFilterServiceType!)
-            : null,
+        serviceType: _activeFilterServiceType,
       );
 
       emit(

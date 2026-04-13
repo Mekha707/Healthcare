@@ -7,14 +7,34 @@ import 'package:healthcareapp_try1/Pages/Booking/lab_page.dart';
 import 'package:healthcareapp_try1/Pages/Booking/nurse_page.dart';
 
 class BookingPage extends StatefulWidget {
-  const BookingPage({super.key});
+  final List<String> initialTestIds;
+
+  const BookingPage({super.key, this.initialTestIds = const []});
 
   @override
   State<BookingPage> createState() => _BookingPageState();
 }
 
 class _BookingPageState extends State<BookingPage> {
-  int _selectedIndex = 0; // الخيار الأول هو المختار افتراضياً
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialTestIds.isNotEmpty ? 2 : 0;
+  }
+
+  @override
+  void didUpdateWidget(BookingPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialTestIds.isNotEmpty &&
+        widget.initialTestIds != oldWidget.initialTestIds) {
+      setState(() {
+        _selectedIndex = 2; // روح على tab الـ Labs
+      });
+    }
+  }
+
   List<Map<String, dynamic>> tabBar = [
     {
       "name": "Doctor",
@@ -179,7 +199,8 @@ class _BookingPageState extends State<BookingPage> {
       case 1:
         return NursePage();
       case 2:
-        return LabPage();
+        return LabPage(initialTestIds: widget.initialTestIds); // ✅
+
       default:
         return const SizedBox();
     }

@@ -28,8 +28,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ProviderDetailsPage extends StatelessWidget {
   final HealthcareProvider provider;
-
-  const ProviderDetailsPage({super.key, required this.provider});
+  final List<String> initialTestIds;
+  const ProviderDetailsPage({
+    super.key,
+    required this.provider,
+    this.initialTestIds = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -48,14 +52,21 @@ class ProviderDetailsPage extends StatelessWidget {
             ), // تشغيل جلب المراجعات فوراً
         ),
       ],
-      child: _ProviderDetailsView(provider: provider),
+      child: _ProviderDetailsView(
+        provider: provider,
+        initialTestIds: initialTestIds,
+      ),
     );
   }
 }
 
 class _ProviderDetailsView extends StatefulWidget {
   final HealthcareProvider provider;
-  const _ProviderDetailsView({required this.provider});
+  final List<String> initialTestIds;
+  const _ProviderDetailsView({
+    required this.provider,
+    this.initialTestIds = const [],
+  });
 
   @override
   State<_ProviderDetailsView> createState() => _ProviderDetailsViewState();
@@ -69,6 +80,14 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
   int? countSelectedhours;
   String selectedService = "";
   String? selectedSlotId;
+  List<String> _pendingTestIds = [];
+  @override
+  void initState() {
+    super.initState();
+    // ✅ لو في initialTestIds حطها في selectedTests
+    // بس هنحتاج الـ testName برضو - هنجيبه من الـ details لما يتحملوا
+    _pendingTestIds = List.from(widget.initialTestIds);
+  }
 
   Map<String, String> selectedTests = {}; // قائمة لتخزين التحاليل المختارة
   IconData _getProviderIcon({required bool isReady, required bool hasService}) {
@@ -290,6 +309,22 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
           if (state is DetailsLoaded) {
             final data = state.providerData;
+
+            if (_pendingTestIds.isNotEmpty && data is LabDetailsModel) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                setState(() {
+                  for (final testId in _pendingTestIds) {
+                    final test = data.tests.firstWhere(
+                      (t) => t.id == testId,
+                      orElse: () => data.tests.first,
+                    );
+                    selectedTests[test.name] = test.id;
+                  }
+                  _pendingTestIds = [];
+                });
+              });
+            }
+
             if (data is DoctorDetailsModel || data is NurseDetailsModel) {
               print("SLOTS: ${data.slots}");
             }

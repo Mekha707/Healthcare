@@ -181,7 +181,6 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_event.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_state.dart';
-import 'package:healthcareapp_try1/Buttons/buttons.dart';
 import 'package:healthcareapp_try1/Buttons/filter_button.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/enums.dart';
 import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
@@ -189,8 +188,8 @@ import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 // import 'package:healthcareapp_try1/Models/lab_model.dart';
 
 class LabPage extends StatefulWidget {
-  const LabPage({super.key});
-
+  const LabPage({super.key, this.initialTestIds = const []});
+  final List<String> initialTestIds;
   @override
   State<LabPage> createState() => _LabPageState();
 }
@@ -198,12 +197,26 @@ class LabPage extends StatefulWidget {
 class _LabPageState extends State<LabPage> {
   final ScrollController _scrollController = ScrollController();
   bool isFilterd = false;
+  late List<String> _initialTestIds;
 
   @override
   void initState() {
     super.initState();
+    _initialTestIds = widget.initialTestIds; // ✅
     _scrollController.addListener(_onScroll);
-    context.read<LabsBloc>().add(FetchLabs());
+
+    // ✅ لو في testIds افتح الفلتر تلقائياً وابعت الفلتر
+
+    if (_initialTestIds.isNotEmpty) {
+      isFilterd = true; // ✅ افتح الفلتر تلقائياً
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<LabsBloc>().add(
+          FilterLabs(testIds: _initialTestIds), // ✅ بس الفلتر من غير FetchLabs
+        );
+      });
+    } else {
+      context.read<LabsBloc>().add(FetchLabs()); // ✅ عادي من غير فلتر
+    }
   }
 
   @override
@@ -222,137 +235,242 @@ class _LabPageState extends State<LabPage> {
   }
 
   @override
+  // Widget build(BuildContext context) {
+  //   return BlocBuilder<LabsBloc, LabsState>(
+  //     builder: (context, state) {
+  //       // 1. حالة الخطأ (Error)
+  //       if (state is LabsError) {
+  //         return Center(
+  //           child: Column(
+  //             mainAxisAlignment: MainAxisAlignment.center,
+  //             children: [
+  //               Text(
+  //                 state.message,
+  //                 style: const TextStyle(color: Colors.teal, fontSize: 16),
+  //               ),
+  //               const SizedBox(height: 12),
+  //               ButtonOfAuth(
+  //                 onPressed: () => context.read<LabsBloc>().add(FetchLabs()),
+  //                 buttonText: "Try Again",
+  //                 fontcolor: Colors.white,
+  //                 buttoncolor: Colors.teal,
+  //               ),
+  //             ],
+  //           ),
+  //         );
+  //       }
+  //       // 2. تجهيز حالة التحميل (Loading) والبيانات
+  //       final bool isLoading = state is LabsLoading;
+  //       // هنا بنستخدم الـ LabModel الحقيقي بتاعك
+  //       final List<dynamic> labsList = isLoading
+  //           ? List.generate(
+  //               5,
+  //               (index) => LabModel(
+  //                 id: "loading",
+  //                 name:
+  //                     "Laboratory Name Placeholder", // نص طويل شوية للـ Shimmer
+  //                 address: '',
+  //                 rating: 0,
+  //                 ratingsCount: 0,
+  //                 profilePictureUrl: '',
+  //                 // ضيف هنا أي حقول required تانية بيطلبها الـ LabModel بتاعك
+  //               ),
+  //             )
+  //           : (state is LabsLoaded ? state.filteredLabs : []);
+  //       // 3. تغليف الشاشة كلها بالـ Skeletonizer عشان زر الفلتر يختفي (يظهر مكانه لمعان)
+  //       return Skeletonizer(
+  //         enabled: isLoading,
+  //         child: RefreshIndicator(
+  //           onRefresh: () async {
+  //             context.read<LabsBloc>().add(RefreshLabs());
+  //           },
+  //           child: CustomScrollView(
+  //             controller: _scrollController,
+  //             slivers: [
+  //               // زر الفلتر (هيظهر عليه تأثير اللمعان لأنه جزء من الـ Skeletonizer)
+  //               CustomFilterButton(
+  //                 isSelected: isFilterd,
+  //                 inactiveText: "Filter Labs",
+  //                 onTap: () {
+  //                   setState(() {
+  //                     isFilterd = !isFilterd;
+  //                   });
+  //                 },
+  //                 activeColor: Colors.teal,
+  //               ),
+  //               const SliverToBoxAdapter(child: SizedBox(height: 10)),
+  //               // قائمة البحث
+  //               SliverAnimatedOpacity(
+  //                 opacity: isFilterd ? 1.0 : 0.0,
+  //                 duration: const Duration(milliseconds: 400),
+  //                 sliver: isFilterd
+  //                     ? SliverToBoxAdapter(
+  //                         child: SearchForNurseAndLab(
+  //                           medicalStaff: MedicalStaff.lab,
+  //                           initialTestIds: _initialTestIds,
+  //                           onFilterChanged: (name, specialty, location) {
+  //                             context.read<LabsBloc>().add(
+  //                               FilterLabs(name: name, location: location),
+  //                             );
+  //                           },
+  //                         ),
+  //                       )
+  //                     : const SliverToBoxAdapter(child: SizedBox.shrink()),
+  //               ),
+  //               const SliverToBoxAdapter(child: SizedBox(height: 10)),
+  //               // قائمة النتائج أو رسالة "لا يوجد"
+  //               (!isLoading && labsList.isEmpty)
+  //                   ? const SliverFillRemaining(
+  //                       child: Center(
+  //                         child: Text('لا توجد معامل مطابقة للبحث'),
+  //                       ),
+  //                     )
+  //                   : SliverList(
+  //                       delegate: SliverChildBuilderDelegate(
+  //                         (context, index) {
+  //                           // منطق تحميل المزيد (Pagination)
+  //                           if (!isLoading && index == labsList.length) {
+  //                             return const Center(
+  //                               child: Padding(
+  //                                 padding: EdgeInsets.all(16),
+  //                                 child: CircularProgressIndicator(
+  //                                   color: Colors.teal,
+  //                                 ),
+  //                               ),
+  //                             );
+  //                           }
+  //                           final lab = labsList[index];
+  //                           return UniversalMedicalCard(
+  //                             provider: lab as HealthcareProvider,
+  //                             initialTestIds: _initialTestIds,
+  //                           );
+  //                         },
+  //                         // لو بيحمل اظهر 5 كروت، لو خلص اظهر العدد الحقيقي + 1 للودر لو متاح
+  //                         childCount: isLoading
+  //                             ? 5
+  //                             : labsList.length +
+  //                                   (state is LabsLoaded && state.isLoadingMore
+  //                                       ? 1
+  //                                       : 0),
+  //                       ),
+  //                     ),
+  //               const SliverToBoxAdapter(child: SizedBox(height: 150)),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<LabsBloc, LabsState>(
-      builder: (context, state) {
-        // 1. حالة الخطأ (Error)
-        if (state is LabsError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  state.message,
-                  style: const TextStyle(color: Colors.teal, fontSize: 16),
-                ),
-                const SizedBox(height: 12),
-                ButtonOfAuth(
-                  onPressed: () => context.read<LabsBloc>().add(FetchLabs()),
-                  buttonText: "Try Again",
-                  fontcolor: Colors.white,
-                  buttoncolor: Colors.teal,
-                ),
-              ],
+    // لاحظ: الـ Scaffold والـ Search Widget خارج الـ BlocBuilder الرئيسي للنتائج
+    return Scaffold(
+      backgroundColor: Colors.grey.shade100,
+      body: RefreshIndicator(
+        onRefresh: () async => context.read<LabsBloc>().add(RefreshLabs()),
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            // 1. زر الفلتر - ثابت لا يتأثر بالـ Loading
+            CustomFilterButton(
+              isSelected: isFilterd,
+              inactiveText: "Filter Labs",
+              onTap: () => setState(() => isFilterd = !isFilterd),
+              activeColor: Colors.teal,
             ),
-          );
-        }
 
-        // 2. تجهيز حالة التحميل (Loading) والبيانات
-        final bool isLoading = state is LabsLoading;
+            const SliverToBoxAdapter(child: SizedBox(height: 10)),
 
-        // هنا بنستخدم الـ LabModel الحقيقي بتاعك
-        final List<dynamic> labsList = isLoading
-            ? List.generate(
-                5,
-                (index) => LabModel(
-                  id: "loading",
-                  name:
-                      "Laboratory Name Placeholder", // نص طويل شوية للـ Shimmer
-                  address: '',
-                  rating: 0,
-                  ratingsCount: 0,
-                  profilePictureUrl: '',
-                  // ضيف هنا أي حقول required تانية بيطلبها الـ LabModel بتاعك
-                ),
-              )
-            : (state is LabsLoaded ? state.filteredLabs : []);
+            // 2. الفلتر - ثابت ومفتوح دائماً طالما isFilterd بـ true
+            // لا نضعه داخل BlocBuilder للـ Labs عشان ميرمش
+            SliverAnimatedOpacity(
+              opacity: isFilterd ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 400),
+              sliver: isFilterd
+                  ? SliverToBoxAdapter(
+                      child: SearchForNurseAndLab(
+                        medicalStaff: MedicalStaff.lab,
+                        initialTestIds: _initialTestIds,
+                        onFilterChanged: (name, specialty, location) {
+                          context.read<LabsBloc>().add(
+                            FilterLabs(
+                              name: name,
+                              location: location,
+                              testIds: _initialTestIds,
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  : const SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
 
-        // 3. تغليف الشاشة كلها بالـ Skeletonizer عشان زر الفلتر يختفي (يظهر مكانه لمعان)
-        return Skeletonizer(
-          enabled: isLoading,
-          child: RefreshIndicator(
-            onRefresh: () async {
-              context.read<LabsBloc>().add(RefreshLabs());
-            },
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                // زر الفلتر (هيظهر عليه تأثير اللمعان لأنه جزء من الـ Skeletonizer)
-                CustomFilterButton(
-                  isSelected: isFilterd,
-                  inactiveText: "Filter Labs",
-                  onTap: () {
-                    setState(() {
-                      isFilterd = !isFilterd;
-                    });
-                  },
-                  activeColor: Colors.teal,
-                ),
+            const SliverToBoxAdapter(child: SizedBox(height: 10)),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 10)),
+            // 3. هنا فقط نضع الـ BlocBuilder والـ Skeletonizer للنتائج
+            BlocBuilder<LabsBloc, LabsState>(
+              builder: (context, state) {
+                final bool isLoading = state is LabsLoading;
 
-                // قائمة البحث
-                SliverAnimatedOpacity(
-                  opacity: isFilterd ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 400),
-                  sliver: isFilterd
-                      ? SliverToBoxAdapter(
-                          child: SearchForNurseAndLab(
-                            medicalStaff: MedicalStaff.lab,
-                            onFilterChanged: (name, specialty, location) {
-                              context.read<LabsBloc>().add(
-                                FilterLabs(name: name, location: location),
+                // نجهز البيانات الوهمية فقط لو فعلاً مفيش بيانات سابقة
+                final List<dynamic> labsList = (state is LabsLoaded)
+                    ? state.filteredLabs
+                    : (isLoading
+                          ? List.generate(
+                              5,
+                              (i) => LabModel(
+                                id: "loading",
+                                name: "Loading...",
+                                address: '',
+                                rating: 0,
+                                ratingsCount: 0,
+                                profilePictureUrl: '',
+                              ),
+                            )
+                          : []);
+
+                return Skeletonizer.sliver(
+                  // نستخدم .sliver لأننا داخل CustomScrollView
+                  enabled: isLoading,
+                  child: labsList.isEmpty && !isLoading
+                      ? const SliverFillRemaining(
+                          child: Center(child: Text('لا توجد معامل مطابقة')),
+                        )
+                      : SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              if (!isLoading &&
+                                  state is LabsLoaded &&
+                                  index == labsList.length) {
+                                return state.isLoadingMore
+                                    ? const Center(
+                                        child: CircularProgressIndicator(),
+                                      )
+                                    : const SizedBox();
+                              }
+                              final lab = labsList[index];
+                              return UniversalMedicalCard(
+                                provider: lab as HealthcareProvider,
+                                initialTestIds: _initialTestIds,
                               );
                             },
+                            childCount: isLoading
+                                ? 5
+                                : labsList.length +
+                                      (state is LabsLoaded &&
+                                              state.isLoadingMore
+                                          ? 1
+                                          : 0),
                           ),
-                        )
-                      : const SliverToBoxAdapter(child: SizedBox.shrink()),
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 10)),
-
-                // قائمة النتائج أو رسالة "لا يوجد"
-                (!isLoading && labsList.isEmpty)
-                    ? const SliverFillRemaining(
-                        child: Center(
-                          child: Text('لا توجد معامل مطابقة للبحث'),
                         ),
-                      )
-                    : SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            // منطق تحميل المزيد (Pagination)
-                            if (!isLoading && index == labsList.length) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: CircularProgressIndicator(
-                                    color: Colors.teal,
-                                  ),
-                                ),
-                              );
-                            }
-
-                            final lab = labsList[index];
-                            return UniversalMedicalCard(
-                              provider: lab as HealthcareProvider,
-                            );
-                          },
-                          // لو بيحمل اظهر 5 كروت، لو خلص اظهر العدد الحقيقي + 1 للودر لو متاح
-                          childCount: isLoading
-                              ? 5
-                              : labsList.length +
-                                    (state is LabsLoaded && state.isLoadingMore
-                                        ? 1
-                                        : 0),
-                        ),
-                      ),
-                const SliverToBoxAdapter(child: SizedBox(height: 150)),
-              ],
+                );
+              },
             ),
-          ),
-        );
-      },
+            const SliverToBoxAdapter(child: SizedBox(height: 150)),
+          ],
+        ),
+      ),
     );
   }
 }

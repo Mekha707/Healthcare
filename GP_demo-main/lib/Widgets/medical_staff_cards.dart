@@ -9,8 +9,14 @@ import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 
 class UniversalMedicalCard extends StatefulWidget {
   final HealthcareProvider provider;
-
-  const UniversalMedicalCard({super.key, required this.provider});
+  final String? initialServiceType;
+  final List<String> initialTestIds;
+  const UniversalMedicalCard({
+    super.key,
+    required this.provider,
+    this.initialServiceType,
+    this.initialTestIds = const [],
+  });
 
   @override
   State<UniversalMedicalCard> createState() => _UniversalMedicalCardState();
@@ -281,7 +287,10 @@ class _UniversalMedicalCardState extends State<UniversalMedicalCard> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ProviderDetailsPage(provider: widget.provider),
+              builder: (_) => ProviderDetailsPage(
+                provider: widget.provider,
+                initialTestIds: widget.initialTestIds, // ✅ بدل selectedTestIds
+              ),
             ),
           );
         },

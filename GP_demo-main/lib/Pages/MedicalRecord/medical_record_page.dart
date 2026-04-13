@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/MedicalRecordBloc/medical_record_cubit.dart';
+import 'package:healthcareapp_try1/Bloc/NavigationBloc/navigation_bloc.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/medical_record_model.dart';
 import 'package:healthcareapp_try1/core/gradient_avatar.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -47,7 +48,13 @@ class _MedicalRecordPageState extends State<MedicalRecordPage> {
   // ─── Header ───
   Widget _buildHeader(MedicalRecordModel r, BuildContext context) {
     return Container(
-      color: const Color(0xff0861dd),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+        color: const Color(0xff0861dd),
+      ),
       padding: const EdgeInsets.fromLTRB(16, 50, 16, 20),
       child: Row(
         children: [
@@ -794,6 +801,56 @@ class _MedicalRecordPageState extends State<MedicalRecordPage> {
   }
 
   // ─── Pending Tests ───
+  // Widget _buildPendingTests(List<RequiredTest> tests) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: _cardDecoration(),
+  //     child: Column(
+  //       children: tests
+  //           .map(
+  //             (t) => Padding(
+  //               padding: const EdgeInsets.symmetric(vertical: 5),
+  //               child: Row(
+  //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                 children: [
+  //                   Row(
+  //                     children: [
+  //                       Container(
+  //                         width: 8,
+  //                         height: 8,
+  //                         decoration: const BoxDecoration(
+  //                           color: Colors.orange,
+  //                           shape: BoxShape.circle,
+  //                         ),
+  //                       ),
+  //                       const SizedBox(width: 10),
+  //                       Text(
+  //                         t.testName,
+  //                         style: const TextStyle(
+  //                           fontSize: 13,
+  //                           fontFamily: 'Agency',
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+
+  //                   IconButton(
+  //                     onPressed: () {},
+  //                     icon: Icon(
+  //                       Icons.search_sharp,
+  //                       size: 35,
+  //                       color: Colors.deepOrange,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           )
+  //           .toList(),
+  //     ),
+  //   );
+  // }
+
   Widget _buildPendingTests(List<RequiredTest> tests) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -827,12 +884,43 @@ class _MedicalRecordPageState extends State<MedicalRecordPage> {
                       ],
                     ),
 
-                    IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        Icons.search_sharp,
-                        size: 35,
-                        color: Colors.deepOrange,
+                    // ✅ زرار السيرش
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context); // تقفل Medical Record
+                        Navigator.pop(context);
+                        context.read<NavigationBloc>().add(
+                          TabChanged(1, initialTestIds: [t.testId]),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.deepOrange.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.deepOrange.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.search,
+                              size: 16,
+                              color: Colors.deepOrange.shade700,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Find lab',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.deepOrange.shade700,
+                                fontFamily: 'Agency',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

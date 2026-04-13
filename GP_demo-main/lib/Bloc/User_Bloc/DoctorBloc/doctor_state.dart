@@ -16,12 +16,13 @@ class DoctorsLoaded extends DoctorsState {
   final bool hasNextPage;
   final int currentPage;
   final bool isLoadingMore;
-
+  final bool isRefreshing;
   DoctorsLoaded({
     required this.allDoctors,
     required this.filteredDoctors,
     required this.hasNextPage,
     required this.currentPage,
+    this.isRefreshing = false,
     this.isLoadingMore = false,
   });
 
@@ -30,6 +31,7 @@ class DoctorsLoaded extends DoctorsState {
     List<Doctor>? filteredDoctors,
     bool? hasNextPage,
     int? currentPage,
+    bool? isRefreshing,
     bool? isLoadingMore,
   }) {
     return DoctorsLoaded(

@@ -35,14 +35,6 @@ class _HomePageState extends State<HomePage> {
     final size = MediaQuery.of(context).size;
     final bool isTablet = size.width > 600;
 
-    final List<Widget> pages = [
-      HomePageContent(),
-      BookingPage(),
-      const Center(child: Text("AI Medical Assistant")),
-      const Center(child: Text("Health Community")),
-      AmbulancePage(),
-    ];
-
     // نستخدم MultiBlocListener إذا كان لديك مستمعين كثر، أو BlocListener واحد هنا
     return BlocListener<ProfileCubit, ProfileState>(
       listener: (context, state) async {
@@ -286,7 +278,7 @@ class _HomePageState extends State<HomePage> {
               bottom: false,
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
-                child: pages[state.selectedIndex],
+                child: _buildPage(state.selectedIndex, state),
                 transitionBuilder: (Widget child, Animation<double> animation) {
                   return FadeTransition(opacity: animation, child: child);
                 },
@@ -313,5 +305,22 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     );
+  }
+
+  Widget _buildPage(int index, NavigationState state) {
+    switch (index) {
+      case 0:
+        return HomePageContent();
+      case 1:
+        return BookingPage(initialTestIds: state.initialTestIds);
+      case 2:
+        return const Center(child: Text("AI Medical Assistant"));
+      case 3:
+        return const Center(child: Text("Health Community"));
+      case 4:
+        return AmbulancePage();
+      default:
+        return const SizedBox();
+    }
   }
 }

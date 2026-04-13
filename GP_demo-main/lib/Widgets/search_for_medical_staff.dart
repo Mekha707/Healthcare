@@ -27,8 +27,11 @@ class SearchForNurseAndLab extends StatefulWidget {
     super.key,
     required this.medicalStaff,
     required this.onFilterChanged,
+    this.initialTestIds = const [],
   });
   final MedicalStaff medicalStaff;
+  final List<String> initialTestIds; // ✅ جديد
+
   final Function(String name, Specialty? specialty, String? _selectedCity)
   onFilterChanged; // الدالة المرسلة
 
@@ -46,9 +49,24 @@ class _SearchForNurseAndLab extends State<SearchForNurseAndLab> {
   Specialty? _selectedSpecialty;
 
   @override
+  // void initState() {
+  //   super.initState();
+  //   // ✅ لو في initialTestIds نبدأ بيها
+  //   selectedTestIds = List.from(widget.initialTestIds);
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     context.read<CitiesCubit>().getCities();
+  //     context.read<TestBloc>().add(FetchLabTests());
+  //     // ✅ لو في testIds ابعت الفلتر على طول
+  //     if (selectedTestIds.isNotEmpty) {
+  //       _updateFilters();
+  //     }
+  //   });
+  // }
+  @override
   void initState() {
     super.initState();
-    // تأكدي أن الـ Cubit موجود في الـ Context
+    selectedTestIds = List.from(widget.initialTestIds);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CitiesCubit>().getCities();
       context.read<TestBloc>().add(FetchLabTests());
@@ -179,12 +197,24 @@ class _SearchForNurseAndLab extends State<SearchForNurseAndLab> {
                     ),
                     const SizedBox(height: 5),
                     TestDropdownScreen(
+                      initialTestIds: widget.initialTestIds,
                       onTestsChanged: (tests) {
-                        setState(() {
-                          // بنجمع أسامي التحاليل في قائمة نصوص عشان نبعتها للـ API
-                          selectedTestIds = tests.map((e) => e.id).toList();
+                        selectedTestIds = tests.map((e) => e.id).toList();
+                        if (_debounce?.isActive ?? false) _debounce!.cancel();
+                        _debounce = Timer(const Duration(milliseconds: 600), () {
+                          // نرسل الطلب بعد توقف المستخدم عن الضغط بـ 600 مللي ثانية
                           _updateFilters();
                         });
+                        // setState(() {
+                        //   selectedTestIds = tests.map((e) => e.id).toList();
+                        //   if (_debounce?.isActive ?? false) _debounce!.cancel();
+                        //   _debounce = Timer(
+                        //     const Duration(milliseconds: 500),
+                        //     () {
+                        //       _updateFilters(); // الفلتر يشتغل بعد نص ثانية من آخر دوسة
+                        //     },
+                        //   );
+                        // });
                       },
                     ),
                     const SizedBox(height: 12),
@@ -309,14 +339,17 @@ class _SearchForDoctor extends State<SearchForDoctor> {
   LocationModel? _selectedLocation;
   Timer? _debounce;
 
-  // دالة مساعدة لتحديث الأب
-  void _updateFilters() {
-    widget.onFilterChanged(
-      _searchName,
-      _selectedSpecialty,
-      _selectedCity,
-      _selectedServiceString, // ✅ أضف ده
-    );
+  void _updateFiltersWithDebounce() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      widget.onFilterChanged(
+        _searchName,
+        _selectedSpecialty,
+        _selectedCity,
+        _selectedServiceString,
+      );
+    });
   }
 
   @override
@@ -337,7 +370,7 @@ class _SearchForDoctor extends State<SearchForDoctor> {
     _debounce = Timer(const Duration(milliseconds: 700), () {
       // 700ms وقت مثالي
       _searchName = query;
-      _updateFilters();
+      _updateFiltersWithDebounce();
     });
   }
 
@@ -407,7 +440,7 @@ class _SearchForDoctor extends State<SearchForDoctor> {
                 onChanged: (val) {
                   setState(() {
                     _selectedServiceString = val;
-                    _updateFilters(); // ✅ أضف السطر ده
+                    _updateFiltersWithDebounce();
                   });
                 },
                 labelA: "Clinic",
@@ -419,7 +452,7 @@ class _SearchForDoctor extends State<SearchForDoctor> {
                 onChanged: (val) {
                   setState(() {
                     _selectedServiceString = val;
-                    _updateFilters(); // ✅ أضف السطر ده
+                    _updateFiltersWithDebounce();
                   });
                 },
                 labelA: "Online",
@@ -431,7 +464,7 @@ class _SearchForDoctor extends State<SearchForDoctor> {
                 onChanged: (val) {
                   setState(() {
                     _selectedServiceString = val;
-                    _updateFilters(); // ✅ أضف السطر ده
+                    _updateFiltersWithDebounce();
                   });
                 },
                 labelA: "home",
@@ -464,7 +497,7 @@ class _SearchForDoctor extends State<SearchForDoctor> {
           onChanged: (value) {
             setState(() {
               _selectedSpecialty = value;
-              _updateFilters(); // دي هتبعت الـ ID الجديد للـ DoctorsBloc
+              _updateFiltersWithDebounce(); // دي هتبعت الـ ID الجديد للـ DoctorsBloc
             });
           },
           headerBuilder: (context, selectedItem, _) {
@@ -499,7 +532,7 @@ class _SearchForDoctor extends State<SearchForDoctor> {
                     setState(() {
                       _specialtyController.clear();
                       _selectedSpecialty = null;
-                      _updateFilters();
+                      _updateFiltersWithDebounce();
                     });
                   },
                   child: Container(
@@ -578,7 +611,7 @@ class _SearchForDoctor extends State<SearchForDoctor> {
           onChanged: (value) {
             setState(() {
               _selectedCity = value;
-              _updateFilters();
+              _updateFiltersWithDebounce();
             });
           },
           // إضافة listItemBuilder للتأكد من ظهور العناصر في القائمة
@@ -614,7 +647,7 @@ class _SearchForDoctor extends State<SearchForDoctor> {
                       setState(() {
                         _cityController.clear();
                         _selectedCity = null;
-                        _updateFilters();
+                        _updateFiltersWithDebounce();
                       });
                     },
                     child: const Icon(

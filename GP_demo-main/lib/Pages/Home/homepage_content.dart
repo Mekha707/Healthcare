@@ -66,17 +66,6 @@ class _HomepageContentState extends State<HomePageContent> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      // body: BlocBuilder<DoctorCubit, DoctorState>(
-      //   builder: (context, state) {
-      //     // 1. حالة التحميل
-      //     if (state.isLoading) {
-      //       return const Center(child: CircularProgressIndicator());
-      //     }
-
-      //     // 2. حالة الخطأ
-      //     if (state.errorMessage != null) {
-      //       return Center(child: Text("Error: ${state.errorMessage}"));
-      //     }
 
       // 3. عرض المحتوى عند نجاح جلب البيانات
       body: SingleChildScrollView(

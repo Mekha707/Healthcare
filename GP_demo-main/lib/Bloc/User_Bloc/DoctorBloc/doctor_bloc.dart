@@ -103,9 +103,6 @@ class DoctorsBloc extends Bloc<DoctorsEvent, DoctorsState> {
     _activeFilterServiceType = event.serviceType;
     _currentPage = 1;
 
-    // ❌ بدل ما تمسح UI
-    // emit(DoctorsLoading());
-
     // ✅ لو فيه داتا قبل كده، خليه loading خفيف
     if (state is DoctorsLoaded) {
       emit((state as DoctorsLoaded).copyWith(isRefreshing: true));

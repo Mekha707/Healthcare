@@ -21,6 +21,7 @@ class DoctorPage extends StatefulWidget {
 class _DoctorPage extends State<DoctorPage> {
   final ScrollController _scrollController = ScrollController();
   bool isFilterd = false;
+  String _selectedServiceType = "clinic";
 
   @override
   void initState() {
@@ -128,6 +129,10 @@ class _DoctorPage extends State<DoctorPage> {
                           child: SearchForDoctor(
                             onFilterChanged:
                                 (name, specialty, location, serviceType) {
+                                  setState(() {
+                                    _selectedServiceType = serviceType;
+                                  });
+
                                   context.read<DoctorsBloc>().add(
                                     FilterDoctors(
                                       name: name,
@@ -165,8 +170,8 @@ class _DoctorPage extends State<DoctorPage> {
 
                         final doctor = doctorsList[index];
                         return UniversalMedicalCard(
-                          // التأكد من عمل Cast للموديل إذا كان الـ Card يتوقع HealthcareProvider
                           provider: doctor as HealthcareProvider,
+                          initialServiceType: _selectedServiceType,
                         );
                       },
                       // تحديد عدد العناصر بدقة لتجنب الـ RangeError

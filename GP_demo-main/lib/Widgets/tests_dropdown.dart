@@ -220,10 +220,7 @@ class _TestDropdownScreenState extends State<TestDropdownScreen> {
                     selectedTests.isEmpty
                         ? "Select Medical Tests"
                         : "${selectedTests.length} Tests Selected",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontSize: 14, fontFamily: 'Agency'),
                   ),
                   children: state.tests.map((test) {
                     bool isSelected = selectedTests.any((t) => t.id == test.id);

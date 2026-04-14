@@ -49,20 +49,6 @@ class _SearchForNurseAndLab extends State<SearchForNurseAndLab> {
   Specialty? _selectedSpecialty;
 
   @override
-  // void initState() {
-  //   super.initState();
-  //   // ✅ لو في initialTestIds نبدأ بيها
-  //   selectedTestIds = List.from(widget.initialTestIds);
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     context.read<CitiesCubit>().getCities();
-  //     context.read<TestBloc>().add(FetchLabTests());
-  //     // ✅ لو في testIds ابعت الفلتر على طول
-  //     if (selectedTestIds.isNotEmpty) {
-  //       _updateFilters();
-  //     }
-  //   });
-  // }
-  @override
   void initState() {
     super.initState();
     selectedTestIds = List.from(widget.initialTestIds);
@@ -205,16 +191,6 @@ class _SearchForNurseAndLab extends State<SearchForNurseAndLab> {
                           // نرسل الطلب بعد توقف المستخدم عن الضغط بـ 600 مللي ثانية
                           _updateFilters();
                         });
-                        // setState(() {
-                        //   selectedTestIds = tests.map((e) => e.id).toList();
-                        //   if (_debounce?.isActive ?? false) _debounce!.cancel();
-                        //   _debounce = Timer(
-                        //     const Duration(milliseconds: 500),
-                        //     () {
-                        //       _updateFilters(); // الفلتر يشتغل بعد نص ثانية من آخر دوسة
-                        //     },
-                        //   );
-                        // });
                       },
                     ),
                     const SizedBox(height: 12),

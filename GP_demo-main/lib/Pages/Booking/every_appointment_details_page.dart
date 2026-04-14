@@ -7,10 +7,12 @@ import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/Bloc/Appointment_details_/appointment_details_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/ReviewBloc/review_submit.cubit.dart';
 import 'package:healthcareapp_try1/Models/AppointmentDetails/review_details.dart';
+import 'package:healthcareapp_try1/Widgets/custom_loader1.dart';
 import 'package:healthcareapp_try1/core/gradient_avatar.dart';
 import 'package:healthcareapp_try1/core/string_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class AppointmentDetailsPage extends StatelessWidget {
   const AppointmentDetailsPage({super.key});
@@ -105,13 +107,13 @@ class AppointmentDetailsPage extends StatelessWidget {
                   ),
 
                 if (d.review != null) _reviewCard(d.review!),
-
-                if (d.review == null)
-                  _reviewButton(
-                    context,
-                    targetId: d.doctorId,
-                    targetType: 'Doctor',
-                  ),
+                // ✅ بيظهر دايماً — سواء في edit أو add
+                _reviewButton(
+                  context,
+                  targetId: d.doctorId,
+                  targetType: 'Doctor',
+                  existingReview: d.review, // ✅ بيبعت الـ review الموجود لو فيه
+                ),
                 const SizedBox(height: 30),
               ],
             ),
@@ -154,13 +156,13 @@ class AppointmentDetailsPage extends StatelessWidget {
                 ]),
 
                 if (n.review != null) _reviewCard(n.review!),
-
-                if (n.review == null)
-                  _reviewButton(
-                    context,
-                    targetId: n.nurseId,
-                    targetType: 'Nurse',
-                  ),
+                // ✅ بيظهر دايماً — سواء في edit أو add
+                _reviewButton(
+                  context,
+                  targetId: n.nurseId,
+                  targetType: 'Doctor',
+                  existingReview: n.review, // ✅ بيبعت الـ review الموجود لو فيه
+                ),
                 const SizedBox(height: 30),
               ],
             ),
@@ -207,10 +209,13 @@ class AppointmentDetailsPage extends StatelessWidget {
                   ),
 
                 if (l.review != null) _reviewCard(l.review!),
-
-                if (l.review == null)
-                  _reviewButton(context, targetId: l.labId, targetType: 'Lab'),
-
+                // ✅ بيظهر دايماً — سواء في edit أو add
+                _reviewButton(
+                  context,
+                  targetId: l.labId,
+                  targetType: 'Doctor',
+                  existingReview: l.review, // ✅ بيبعت الـ review الموجود لو فيه
+                ),
                 const SizedBox(height: 30),
               ],
             ),
@@ -626,7 +631,7 @@ class AppointmentDetailsPage extends StatelessWidget {
   }
 
   Widget _buildSkeleton() =>
-      const Center(child: CircularProgressIndicator(color: Color(0xff0861dd)));
+      const Center(child: CustomSpinner(size: 40, color: Color(0xff0861dd)));
 
   Widget _buildError(String msg, BuildContext context) => Center(
     child: Column(
@@ -649,9 +654,13 @@ class AppointmentDetailsPage extends StatelessWidget {
     BuildContext context, {
     required String targetId,
     required String targetType,
+    ReviewDetails? existingReview, // ✅
   }) {
-    int selectedRating = 0;
-    final commentController = TextEditingController();
+    // ✅ لو في review قديم، ابدأ بقيمه
+    int selectedRating = existingReview?.rating ?? 0;
+    final commentController = TextEditingController(
+      text: existingReview?.comment ?? '',
+    );
 
     showModalBottomSheet(
       context: context,
@@ -667,21 +676,18 @@ class AppointmentDetailsPage extends StatelessWidget {
             return BlocListener<ReviewSubmitCubit, ReviewSubmitState>(
               listener: (ctx, state) {
                 if (state is ReviewSubmitSuccess) {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('تم إرسال التقييم بنجاح'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  // ✅ refresh الأول، بعدين pop
+                  context.read<AppointmentDetailsCubit>().refresh().then((_) {
+                    Navigator.pop(ctx);
+                    showToast(
+                      existingReview != null
+                          ? 'تم تعديل التقييم بنجاح'
+                          : 'تم إرسال التقييم بنجاح',
+                    );
+                  });
                 }
                 if (state is ReviewSubmitError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  showToast(state.message, isError: true);
                 }
               },
               child: Padding(
@@ -695,7 +701,6 @@ class AppointmentDetailsPage extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Handle
                     Center(
                       child: Container(
                         width: 40,
@@ -708,9 +713,12 @@ class AppointmentDetailsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    const Text(
-                      'Add your review',
-                      style: TextStyle(
+                    // ✅ العنوان بيتغير حسب add أو edit
+                    Text(
+                      existingReview != null
+                          ? 'Edit your review'
+                          : 'Add your review',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Cotta',
@@ -783,6 +791,8 @@ class AppointmentDetailsPage extends StatelessWidget {
                                       rating: selectedRating,
                                       comment: commentController.text,
                                       token: token,
+                                      // ✅ لو edit، بعت الـ reviewId
+                                      reviewId: existingReview?.id,
                                     );
                                   },
                             style: ElevatedButton.styleFrom(
@@ -801,9 +811,12 @@ class AppointmentDetailsPage extends StatelessWidget {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text(
-                                    'Submit Review',
-                                    style: TextStyle(
+                                : Text(
+                                    // ✅ نص الزرار بيتغير
+                                    existingReview != null
+                                        ? 'Update Review'
+                                        : 'Submit Review',
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 15,
                                       fontFamily: 'Agency',
@@ -828,7 +841,10 @@ class AppointmentDetailsPage extends StatelessWidget {
     BuildContext context, {
     required String targetId,
     required String targetType,
+    ReviewDetails? existingReview, // ✅ اضافة
   }) {
+    final bool isEdit = existingReview != null;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: SizedBox(
@@ -838,14 +854,18 @@ class AppointmentDetailsPage extends StatelessWidget {
             context,
             targetId: targetId,
             targetType: targetType,
+            existingReview: existingReview, // ✅
           ),
-          icon: const Icon(
-            Icons.star_outline_rounded,
-            color: Color(0xff0861dd),
+          icon: Icon(
+            isEdit ? Icons.edit_outlined : Icons.star_outline_rounded,
+            color: const Color(0xff0861dd),
           ),
-          label: const Text(
-            'Add Review',
-            style: TextStyle(color: Color(0xff0861dd), fontFamily: 'Agency'),
+          label: Text(
+            isEdit ? 'Edit Review' : 'Add Review', // ✅
+            style: const TextStyle(
+              color: Color(0xff0861dd),
+              fontFamily: 'Agency',
+            ),
           ),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14),
@@ -856,6 +876,17 @@ class AppointmentDetailsPage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void showToast(String message, {bool isError = false}) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: isError ? Colors.red : Colors.green,
+      textColor: Colors.white,
+      fontSize: 13.0,
     );
   }
 }

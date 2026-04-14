@@ -44,17 +44,17 @@ class Doctor extends HealthcareProvider {
 
   factory Doctor.fromJson(Map<String, dynamic> json) {
     return Doctor(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      specialty: json['specialty'] as String,
-      title: json['title'] as String,
-      address: json['address'] as String,
-      fee: (json['fee'] as num).toDouble(),
-      rating: (json['rating'] as num).toDouble(),
-      ratingsCount: json['ratingsCount'] as int,
-      allowHome: json['allowHome'] as bool,
-      allowOnline: json['allowOnline'] as bool,
-      profilePictureUrl: json['profilePictureUrl'] as String,
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? '',
+      specialty: json['specialty'] ?? '',
+      title: json['title'] ?? '',
+      address: json['address'] ?? '',
+      fee: (json['fee'] ?? 0).toDouble(),
+      rating: (json['rating'] ?? 0).toDouble(),
+      ratingsCount: json['ratingsCount'] ?? 0,
+      allowHome: json['allowHome'] ?? false,
+      allowOnline: json['allowOnline'] ?? false,
+      profilePictureUrl: json['profilePictureUrl'] ?? '',
     );
   }
 

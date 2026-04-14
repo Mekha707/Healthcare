@@ -27,6 +27,7 @@ class ReviewSubmitCubit extends Cubit<ReviewSubmitState> {
     required int rating,
     String? comment,
     required String token,
+    String? reviewId,
   }) async {
     emit(ReviewSubmitLoading());
     try {

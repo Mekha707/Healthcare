@@ -289,6 +289,7 @@ class _UniversalMedicalCardState extends State<UniversalMedicalCard> {
             MaterialPageRoute(
               builder: (_) => ProviderDetailsPage(
                 provider: widget.provider,
+                selectedServiceType: widget.initialServiceType ?? "clinic",
                 initialTestIds: widget.initialTestIds, // ✅ بدل selectedTestIds
               ),
             ),

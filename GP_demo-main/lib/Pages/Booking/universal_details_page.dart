@@ -1,5 +1,7 @@
 // ignore_for_file: deprecated_member_use, file_names, avoid_print, dead_code, unnecessary_null_comparison, unnecessary_to_list_in_spreads, unused_element, unused_local_variable
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -29,10 +31,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ProviderDetailsPage extends StatelessWidget {
   final HealthcareProvider provider;
   final List<String> initialTestIds;
+  final String selectedServiceType;
   const ProviderDetailsPage({
     super.key,
     required this.provider,
     this.initialTestIds = const [],
+    required this.selectedServiceType,
   });
 
   @override
@@ -55,6 +59,7 @@ class ProviderDetailsPage extends StatelessWidget {
       child: _ProviderDetailsView(
         provider: provider,
         initialTestIds: initialTestIds,
+        selectedServiceType: selectedServiceType,
       ),
     );
   }
@@ -63,9 +68,11 @@ class ProviderDetailsPage extends StatelessWidget {
 class _ProviderDetailsView extends StatefulWidget {
   final HealthcareProvider provider;
   final List<String> initialTestIds;
+  final String selectedServiceType;
   const _ProviderDetailsView({
     required this.provider,
     this.initialTestIds = const [],
+    required this.selectedServiceType,
   });
 
   @override
@@ -78,15 +85,16 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
   String? selectedTime;
   String? selectedExactHour;
   int? countSelectedhours;
-  String selectedService = "";
+  late String selectedService;
   String? selectedSlotId;
   List<String> _pendingTestIds = [];
+
   @override
   void initState() {
     super.initState();
-    // ✅ لو في initialTestIds حطها في selectedTests
-    // بس هنحتاج الـ testName برضو - هنجيبه من الـ details لما يتحملوا
     _pendingTestIds = List.from(widget.initialTestIds);
+    selectedService = normalizeService(widget.selectedServiceType);
+    log("Selected Service: ${widget.selectedServiceType}");
   }
 
   Map<String, String> selectedTests = {}; // قائمة لتخزين التحاليل المختارة
@@ -1799,5 +1807,30 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
     if (selectedService.isEmpty) return 1;
     if (selectedDate == null || selectedTime == null) return 2;
     return 3;
+  }
+
+  String normalizeService(String? service) {
+    switch (service) {
+      case "clinic":
+      case "Clinic":
+      case "Clinic Visit":
+        return "Clinic Visit";
+
+      case "home":
+      case "Home":
+      case "Home Visit":
+        return "Home Visit";
+
+      case "online":
+      case "Online":
+        return "Online";
+
+      case "hourly":
+      case "Hourly Rate":
+        return "Hourly Rate";
+
+      default:
+        return "";
+    }
   }
 }

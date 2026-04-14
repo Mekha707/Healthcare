@@ -5,16 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:healthcareapp_try1/API/auth_service.dart';
+import 'package:healthcareapp_try1/API/post_service.dart';
 import 'package:healthcareapp_try1/API/profile_service.dart';
 import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/CityCubit/city_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/LoginBloc/login_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/Patient_Profile.dart/patient_profile_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/RegisterationBloc/register_bloc.dart';
+import 'package:healthcareapp_try1/Bloc/ChatBloc/chat_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/DetailsBoc/universal_details_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/MedicalRecordBloc/medical_record_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/MyBookingBloc/mybooking_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/NavigationBloc/navigation_bloc.dart';
+import 'package:healthcareapp_try1/Bloc/PostBloc/post_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/NurseBloc/nurse_bloc.dart';
@@ -27,6 +30,7 @@ import 'package:healthcareapp_try1/Pages/Auth/login_page.dart';
 import 'package:healthcareapp_try1/Pages/Auth/register_step1.dart';
 import 'package:healthcareapp_try1/Pages/Auth/register_step2.dart';
 import 'package:healthcareapp_try1/Pages/Booking/booking_page.dart';
+import 'package:healthcareapp_try1/Pages/Community/feed_screen.dart';
 import 'package:healthcareapp_try1/Pages/Home/home_page1.dart';
 import 'package:healthcareapp_try1/Pages/Home/splash_page.dart';
 import 'package:healthcareapp_try1/Widgets/slide_route.dart';
@@ -71,8 +75,13 @@ void main() async {
         BlocProvider(
           create: (context) => HealthcareDetailsCubit(UserService()),
         ),
+        BlocProvider(
+          create: (_) => PostBloc(PostRepository()),
+          child: const FeedScreen(),
+        ),
         BlocProvider(create: (context) => TestBloc(UserService())),
         BlocProvider(create: (context) => MedicalRecordCubit(authService)),
+        BlocProvider(create: (context) => ChatCubit()),
 
         RepositoryProvider<UserService>(create: (_) => UserService()),
       ],

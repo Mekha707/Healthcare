@@ -45,23 +45,6 @@ class CustomCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // الايقونة
-              // Container(
-              //   width: 35,
-              //   height: 35,
-              //   decoration: BoxDecoration(
-              //     color: Color(0x484777FF),
-              //     shape: BoxShape.circle,
-              //   ),
-              //   child: Center(
-              //     child: Icon(
-              //       Icons.notifications, // ضع الايقونة اللي انت عايزها
-              //       color: Color(0xFF124FFF),
-              //       size: 17,
-              //     ),
-              //   ),
-              // ),
-
               // النصوص
               Expanded(
                 child: Column(

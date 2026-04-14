@@ -13,9 +13,11 @@ import 'package:healthcareapp_try1/Bloc/NavigationBloc/navigation_bloc.dart';
 
 import 'package:healthcareapp_try1/Buttons/icons_heart_stet.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:healthcareapp_try1/Pages/AI/ai_page.dart';
 import 'package:healthcareapp_try1/Pages/Auth/change_password_page.dart';
 import 'package:healthcareapp_try1/Pages/Booking/booking_page.dart';
 import 'package:healthcareapp_try1/Pages/Booking/my_booking_page.dart';
+import 'package:healthcareapp_try1/Pages/Community/feed_screen.dart';
 import 'package:healthcareapp_try1/Pages/Home/ambulance_page.dart';
 import 'package:healthcareapp_try1/Pages/Home/homepage_content.dart';
 import 'package:healthcareapp_try1/Pages/Home/profile_page.dart';
@@ -314,9 +316,9 @@ class _HomePageState extends State<HomePage> {
       case 1:
         return BookingPage(initialTestIds: state.initialTestIds);
       case 2:
-        return const Center(child: Text("AI Medical Assistant"));
+        return HealthChatScreen();
       case 3:
-        return const Center(child: Text("Health Community"));
+        return FeedScreen();
       case 4:
         return AmbulancePage();
       default:

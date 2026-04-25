@@ -1,4 +1,4 @@
-// ignore_for_file: use_key_in_widget_constructors, unused_element, unnecessary_cast
+// ignore_for_file: use_key_in_widget_constructors, unused_element, unnecessary_cast, unnecessary_null_comparison
 
 import 'dart:developer';
 import 'dart:io';
@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/AI_Chat_Bloc/ai_chat_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/AI_Chat_Bloc/ai_chat_state.dart';
-import 'package:healthcareapp_try1/Models/AI/chat_response.dart';
+import 'package:healthcareapp_try1/Models/AI/ai_chat_response.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
 import 'package:healthcareapp_try1/Pages/Booking/universal_details_page.dart';
 import 'package:healthcareapp_try1/Widgets/typing_indicator.dart';
@@ -136,7 +136,7 @@ class _HealthChatScreenState extends State<HealthChatScreen> {
                                       );
                                     }
 
-                                    final msg = history[index] as ChatMessage;
+                                    final msg = history[index] as AiChatMessage;
                                     return Column(
                                       crossAxisAlignment: msg.isUser
                                           ? CrossAxisAlignment.end
@@ -148,8 +148,8 @@ class _HealthChatScreenState extends State<HealthChatScreen> {
                                         ),
                                         if (!msg.isUser &&
                                             msg.doctors != null &&
-                                            msg.doctors!.isNotEmpty)
-                                          _buildDoctorsList(msg.doctors!),
+                                            msg.doctors.isNotEmpty)
+                                          _buildDoctorsList(msg.doctors),
                                         const SizedBox(height: 20),
                                       ],
                                     );

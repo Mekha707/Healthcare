@@ -67,4 +67,10 @@ class AiChatCubit extends Cubit<AiChatState> {
       emit(AiChatSuccess(List.from(history)));
     }
   }
+
+  void clearHistory() {
+    history.clear(); // ← كانت ناقصة
+    saveHistory(); // ← امسح من الـ SharedPreferences
+    emit(AiChatInitial());
+  }
 }

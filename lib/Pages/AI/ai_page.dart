@@ -255,23 +255,36 @@ class _HealthChatScreenState extends State<HealthChatScreen> {
                   ),
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.attach_file, color: _accent),
-                onPressed: () async {
-                  log("Attachment button pressed!");
-                  FilePickerResult? result = await FilePicker.platform
-                      .pickFiles(
-                        type: FileType.custom,
-                        allowedExtensions: ['jpg', 'pdf', 'png', 'doc'],
-                      );
 
-                  if (result != null) {
-                    setState(() {
-                      selectedFilePath = result.files.single.path;
-                    });
-                  }
+              IconButton(
+                icon: Icon(Icons.add_comment_outlined, color: _accent),
+                tooltip: 'New Conversation',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('New Conversation'),
+                      content: const Text(
+                        'Start a new chat? Current history will be cleared.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            context.read<AiChatCubit>().clearHistory();
+                          },
+                          child: const Text('Confirm'),
+                        ),
+                      ],
+                    ),
+                  );
                 },
               ),
+
               CircleAvatar(
                 backgroundColor: _accent,
                 child: IconButton(

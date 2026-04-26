@@ -26,70 +26,62 @@ class AiChatResponse {
 
 // lib/Models/AI/chat_message.dart
 
+// class AiChatMessage {
+//   final String message;
+//   final bool isUser;
+//   final List<Doctor> doctors;
+
+//   AiChatMessage({
+//     required this.message,
+//     required this.isUser,
+//     this.doctors = const [],
+//   });
+
+//   Map<String, dynamic> toJson() => {
+//     'message': message,
+//     'isUser': isUser,
+//     'doctors': doctors.map((d) => d.toJson()).toList(),
+//   };
+
+//   factory AiChatMessage.fromJson(Map<String, dynamic> json) {
+//     return AiChatMessage(
+//       message: json['message'] ?? '',
+//       isUser: json['isUser'] ?? false,
+//       doctors: (json['doctors'] as List? ?? [])
+//           .map((d) => Doctor.fromJson(d))
+//           .toList(),
+//     );
+//   }
+// }
+
 class AiChatMessage {
   final String message;
   final bool isUser;
   final List<Doctor> doctors;
+  final String suggestedSpecialty; // ← أضف ده
 
   AiChatMessage({
     required this.message,
     required this.isUser,
     this.doctors = const [],
+    this.suggestedSpecialty = '', // ← أضف ده
   });
 
   Map<String, dynamic> toJson() => {
     'message': message,
     'isUser': isUser,
     'doctors': doctors.map((d) => d.toJson()).toList(),
+    'suggestedSpecialty': suggestedSpecialty, // ← أضف ده
   };
 
   factory AiChatMessage.fromJson(Map<String, dynamic> json) {
     return AiChatMessage(
       message: json['message'] ?? '',
       isUser: json['isUser'] ?? false,
+      suggestedSpecialty: json['suggestedSpecialty'] ?? '', // ← أضف ده
       doctors: (json['doctors'] as List? ?? [])
           .map((d) => Doctor.fromJson(d))
           .toList(),
     );
   }
 }
-
-// lib/Models/AI/recommended_doctor.dart
-
-// class RecommendedDoctor {
-//   final String id;
-//   final String name;
-//   final String specialty;
-//   final int rating;
-//   final int ratingCount;
-//   final String city;
-
-//   RecommendedDoctor({
-//     required this.id,
-//     required this.name,
-//     required this.specialty,
-//     required this.rating,
-//     required this.ratingCount,
-//     required this.city,
-//   });
-
-//   factory RecommendedDoctor.fromJson(Map<String, dynamic> json) {
-//     return RecommendedDoctor(
-//       id: json['id'] ?? '',
-//       name: json['name'] ?? '',
-//       specialty: json['specialty'] ?? '',
-//       rating: json['rating'] ?? 0,
-//       ratingCount: json['ratingCount'] ?? 0,
-//       city: json['city'] ?? '',
-//     );
-//   }
-
-//   Map<String, dynamic> toJson() => {
-//     'id': id,
-//     'name': name,
-//     'specialty': specialty,
-//     'rating': rating,
-//     'ratingCount': ratingCount,
-//     'city': city,
-//   };
-// }

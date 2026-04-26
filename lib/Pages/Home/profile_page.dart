@@ -9,6 +9,7 @@ import 'package:healthcareapp_try1/Models/Auth_Models/patient_profile_model.dart
 import 'package:healthcareapp_try1/Pages/Home/edit_profile_page.dart';
 import 'package:healthcareapp_try1/core/Theme/app_colors.dart';
 import 'package:healthcareapp_try1/core/gradient_avatar.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PatientProfilePage extends StatefulWidget {
@@ -45,15 +46,37 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: BlocListener<ProfileCubit, ProfileState>(
-        listener: (context, state) {
-          if (state is ProfileSuccess) {
-            setState(() {
-              _currentProfile = state.profile;
-            });
-          }
+
+      // body: BlocListener<ProfileCubit, ProfileState>(
+      //   listener: (context, state) {
+      //     if (state is ProfileSuccess) {
+      //       setState(() {
+      //         _currentProfile = state.profile;
+      //       });
+      //     }
+      //   },
+      //   child: _buildProfile(context, _currentProfile, isDark: isDark),
+      // ),
+      body: BlocBuilder<ProfileCubit, ProfileState>(
+        builder: (context, state) {
+          final isLoading = state is ProfileLoading;
+
+          final profile = state is ProfileSuccess
+              ? state.profile
+              : _currentProfile; // fallback للـ profile الحالي
+
+          return BlocListener<ProfileCubit, ProfileState>(
+            listener: (context, state) {
+              if (state is ProfileSuccess) {
+                setState(() => _currentProfile = state.profile);
+              }
+            },
+            child: Skeletonizer(
+              enabled: isLoading,
+              child: _buildProfile(context, profile, isDark: isDark),
+            ),
+          );
         },
-        child: _buildProfile(context, _currentProfile, isDark: isDark),
       ),
     );
   }

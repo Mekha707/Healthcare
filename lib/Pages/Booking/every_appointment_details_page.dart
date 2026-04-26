@@ -1079,14 +1079,27 @@ class AppointmentDetailsPage extends StatelessWidget {
     );
   }
 
-  bool _canJoinMeeting(String date, String startTime, String endTime) {
+  bool _canJoinMeeting(String? date, String? startTime, String? endTime) {
     try {
-      final now = DateTime.now();
+      if (date == null ||
+          date.isEmpty ||
+          startTime == null ||
+          startTime.isEmpty ||
+          endTime == null ||
+          endTime.isEmpty) {
+        return false;
+      }
 
-      // date زي "2025-06-15", startTime زي "14:30:00"
+      final now = DateTime.now();
       final dateParts = date.split('-');
       final startParts = startTime.split(':');
       final endParts = endTime.split(':');
+
+      if (dateParts.length < 3 ||
+          startParts.length < 2 ||
+          endParts.length < 2) {
+        return false;
+      }
 
       final startDateTime = DateTime(
         int.parse(dateParts[0]),
@@ -1111,12 +1124,27 @@ class AppointmentDetailsPage extends StatelessWidget {
     }
   }
 
-  String _joinAvailableText(String date, String startTime, String endTime) {
+  String _joinAvailableText(String? date, String? startTime, String? endTime) {
     try {
+      if (date == null ||
+          date.isEmpty ||
+          startTime == null ||
+          startTime.isEmpty ||
+          endTime == null ||
+          endTime.isEmpty) {
+        return '';
+      }
+
       final now = DateTime.now();
       final dateParts = date.split('-');
       final startParts = startTime.split(':');
       final endParts = endTime.split(':');
+
+      if (dateParts.length < 3 ||
+          startParts.length < 2 ||
+          endParts.length < 2) {
+        return '';
+      }
 
       final startDateTime = DateTime(
         int.parse(dateParts[0]),
@@ -1134,18 +1162,20 @@ class AppointmentDetailsPage extends StatelessWidget {
         int.parse(endParts[1]),
       );
 
-      final openFrom = startDateTime.subtract(const Duration(minutes: 15));
-
       if (now.isAfter(endDateTime)) return 'Meeting has ended';
 
+      final openFrom = startDateTime.subtract(const Duration(minutes: 15));
       final diff = openFrom.difference(now);
+
       if (diff.inDays > 0) {
         return 'Available in ${diff.inDays}d ${diff.inHours % 24}h';
       }
       if (diff.inHours > 0) {
         return 'Available in ${diff.inHours}h ${diff.inMinutes % 60}m';
       }
-      return 'Available in ${diff.inMinutes}m';
+      if (diff.inMinutes > 0) return 'Available in ${diff.inMinutes}m';
+
+      return '';
     } catch (_) {
       return '';
     }

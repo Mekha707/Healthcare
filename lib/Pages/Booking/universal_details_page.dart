@@ -92,6 +92,11 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
   Color get _borderColor =>
       _isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade200;
   Color get _accent => _isDark ? Colors.blue.shade200 : const Color(0xff0861dd);
+  Color get _successText => _isDark ? Colors.green.shade300 : Colors.green;
+  Color get _warningText =>
+      _isDark ? Colors.orange.shade300 : Colors.orangeAccent;
+  Color get _mutedText =>
+      _isDark ? AppColors.textLight.withOpacity(0.55) : Colors.grey.shade500;
 
   DateTime? selectedDate;
 
@@ -260,7 +265,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
           color: _cardBg,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(_isDark ? 0.18 : 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -293,8 +298,8 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
       body: BlocBuilder<HealthcareDetailsCubit, HealthcareDetailsState>(
         builder: (context, state) {
           if (state is DetailsLoading) {
-            return const Center(
-              child: CustomSpinner(color: Colors.grey, size: 40),
+            return Center(
+              child: CustomSpinner(color: _secondaryText, size: 40),
             );
           }
 
@@ -388,10 +393,10 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                           padding: const EdgeInsets.only(bottom: 10),
                           child: Text(
                             "Selected Service: $selectedService",
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.blue,
+                              color: _accent,
                               fontFamily: 'Agency',
                             ),
                           ),
@@ -411,10 +416,10 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                               padding: const EdgeInsets.only(top: 10),
                               child: Text(
                                 "Selected Hours: $countSelectedhours",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.blueGrey,
+                                  color: _secondaryText,
                                   fontFamily: 'Agency',
                                 ),
                               ),
@@ -464,10 +469,10 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                             padding: const EdgeInsets.only(top: 10),
                             child: Text(
                               "Total Price: ${(getSelectedServiceFee(data)).toStringAsFixed(2)} EGP",
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green,
+                                color: _successText,
                                 fontFamily: 'Cotta',
                               ),
                             ),
@@ -493,7 +498,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                             padding: const EdgeInsets.only(bottom: 10, top: 10),
                             child: Text(
                               "Selected Tests: ${selectedTests.length} item(s)",
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.teal,
@@ -544,7 +549,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                               style: TextStyle(
                                                 color: isSelected
                                                     ? _cardBg
-                                                    : Colors.grey,
+                                                    : _secondaryText,
                                               ),
                                             ),
                                             Text(
@@ -552,7 +557,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                               style: TextStyle(
                                                 color: isSelected
                                                     ? _cardBg
-                                                    : Colors.black,
+                                                    : _primaryText,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -598,7 +603,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                         side: BorderSide(
                                           color: isSelected
                                               ? Colors.teal
-                                              : Colors.grey.shade300,
+                                              : _borderColor,
                                           width: 1,
                                         ),
                                       ),
@@ -612,7 +617,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                       labelStyle: TextStyle(
                                         color: isSelected
                                             ? _cardBg
-                                            : Colors.black,
+                                            : _primaryText,
                                         fontFamily: 'Agency',
                                         fontWeight: isSelected
                                             ? FontWeight.bold
@@ -638,10 +643,10 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                 selectedService == "Home Visit"
                                     ? "\$${(data.homeVisitFee).toStringAsFixed(2)}"
                                     : "Free", // أو السعر الافتراضي للعيادة
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
+                                  color: _accent,
                                 ),
                               ),
                             ),
@@ -672,7 +677,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                     ),
                                     Text(
                                       "\$${(test.price ?? 0).toStringAsFixed(2)}",
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
                                         color: Colors.teal,
@@ -691,18 +696,19 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                               children: [
                                 Text(
                                   "Total Amount (${selectedTests.length} tests)",
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
+                                    color: _primaryText,
                                     fontFamily: 'Agency',
                                   ),
                                 ),
                                 Text(
                                   "\$${totalTestsPrice.toStringAsFixed(2)}",
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.orangeAccent,
+                                    color: _warningText,
                                     fontFamily: 'Agency',
                                   ),
                                 ),
@@ -919,7 +925,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                 // أيقونة الحالة (Checkbox)
                 Icon(
                   isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                  color: isDisabled ? Colors.grey : Colors.teal,
+                  color: isDisabled ? _mutedText : Colors.teal,
                 ),
                 const SizedBox(width: 12),
 
@@ -933,7 +939,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isDisabled ? Colors.grey : _primaryText,
+                          color: isDisabled ? _mutedText : _primaryText,
                           fontFamily: 'Agency',
                           decoration: isDisabled
                               ? TextDecoration.lineThrough
@@ -947,7 +953,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: isDisabled ? Colors.grey : _primaryText,
+                          color: isDisabled ? _mutedText : _primaryText,
                         ),
                       ),
                       if (isDisabled)
@@ -965,7 +971,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
-                    color: isDisabled ? Colors.grey : Colors.teal.shade700,
+                    color: isDisabled ? _mutedText : Colors.teal.shade300,
                     fontFamily: 'Agency',
                   ),
                 ),
@@ -1042,7 +1048,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
           decoration: BoxDecoration(
             color: _cardBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade100),
+            border: Border.all(color: _borderColor),
           ),
           child: Column(
             children: days.map((day) {
@@ -1077,7 +1083,10 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                     isOpen
                         ? Text(
                             "${_formatTime(opening)} - ${_formatTime(closing)}",
-                            style: const TextStyle(fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: _primaryText,
+                            ),
                           )
                         : const Text(
                             "Closed",
@@ -1150,9 +1159,10 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
             children: [
               Text(
                 review.patientName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
+                  color: _primaryText,
                   fontFamily: 'Cotta',
                 ),
               ),
@@ -1282,32 +1292,30 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                   fit: BoxFit.cover,
                   cacheWidth: 800,
                   errorBuilder: (_, __, ___) => Container(
-                    color: Colors.blue.shade50,
-                    child: const Icon(
+                    color: _isDark ? AppColors.surfaceDark : Colors.blue.shade50,
+                    child: Icon(
                       Icons.person,
                       size: 100,
-                      color: Colors.blue,
+                      color: _accent,
                     ),
                   ),
                   loadingBuilder: (_, child, progress) {
                     if (progress == null) return child;
                     return Container(
-                      color: Colors.blue.shade50,
-                      child: const Center(
-                        child: CustomSpinner(
-                          color: Color(0xff0861dd),
-                          size: 40,
-                        ),
+                      color:
+                          _isDark ? AppColors.surfaceDark : Colors.blue.shade50,
+                      child: Center(
+                        child: CustomSpinner(color: _accent, size: 40),
                       ),
                     );
                   },
                 )
               : Container(
-                  color: Colors.blue.shade50,
-                  child: const Icon(
+                  color: _isDark ? AppColors.surfaceDark : Colors.blue.shade50,
+                  child: Icon(
                     Icons.person,
                     size: 100,
-                    color: Colors.blue,
+                    color: _accent,
                   ),
                 ),
         ),
@@ -1324,7 +1332,9 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
         SafeArea(
           child: IconButton(
             style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all(Colors.black54),
+              backgroundColor: MaterialStateProperty.all(
+                _isDark ? Colors.black45 : Colors.black54,
+              ),
               shape: MaterialStateProperty.all(
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
@@ -1342,12 +1352,12 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
       padding: const EdgeInsets.all(16),
       width: double.infinity,
       decoration: BoxDecoration(
-        border: Border.all(color: Color(0xff0861dd).withOpacity(0.3)),
+        border: Border.all(color: _accent.withOpacity(0.3)),
         color: _cardBg,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(_isDark ? 0.22 : 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -1366,6 +1376,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: _primaryText,
                 fontFamily: widget.provider.name.isArabic
                     ? 'ElMessiri'
                     : 'Cotta',
@@ -1384,7 +1395,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
               textAlign: widget.provider.subTitle.getTextAlign,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.blue[700],
+                color: _accent,
                 fontWeight: FontWeight.w600,
                 fontFamily: 'Agency',
               ),
@@ -1523,10 +1534,10 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xff0861dd).withOpacity(0.05)
+                ? _accent.withOpacity(_isDark ? 0.14 : 0.05)
                 : _cardBg,
             border: Border.all(
-              color: isSelected ? const Color(0xff0861dd) : _borderColor,
+              color: isSelected ? _accent : _borderColor,
               width: isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(15),
@@ -1536,7 +1547,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
             children: [
               Icon(
                 icon,
-                color: isSelected ? const Color(0xff0861dd) : _secondaryText,
+                color: isSelected ? _accent : _secondaryText,
               ),
               const SizedBox(height: 8),
               Text(
@@ -1545,7 +1556,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? const Color(0xff0861dd) : _primaryText,
+                  color: isSelected ? _accent : _primaryText,
                   fontFamily: 'Agency',
                 ),
               ),
@@ -1561,11 +1572,11 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                 ),
               ] else if (isSelected) ...[
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   "Selected",
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.blue,
+                    color: _accent,
                     fontFamily: 'Agency',
                   ),
                 ),
@@ -1587,10 +1598,10 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
       decoration: BoxDecoration(
         color: _cardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xff0861dd).withOpacity(0.3)),
+        border: Border.all(color: _accent.withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(_isDark ? 0.16 : 0.05),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -1601,7 +1612,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
         textDirection: bio.getDirection,
         textAlign: bio.getTextAlign,
         style: TextStyle(
-          color: Colors.grey[800],
+          color: _primaryText,
           height: 1.5,
           fontFamily: bio.isArabic ? 'ElMessiri' : 'Agency',
         ),
@@ -1611,9 +1622,10 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
   Widget _buildSectionTitle(String title) => Text(
     title,
-    style: const TextStyle(
+    style: TextStyle(
       fontSize: 18,
       fontWeight: FontWeight.bold,
+      color: _primaryText,
       fontFamily: 'Cotta',
     ),
   );
@@ -1729,7 +1741,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                   subTitle,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade700,
+                    color: _secondaryText,
                     fontFamily: 'Agency',
                   ),
                 ),
@@ -1743,7 +1755,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                 ? const Icon(Icons.celebration, color: Colors.green)
                 : CircularProgressIndicator(
                     value: progressValue,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: _borderColor,
                     color: stepColor,
                     strokeWidth: 3,
                   ),
@@ -1770,12 +1782,12 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
       decoration: BoxDecoration(
         color: _cardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: _borderColor),
       ),
       child: Center(
         child: Text(
           message,
-          style: TextStyle(color: Colors.grey[500], fontSize: 14),
+          style: TextStyle(color: _mutedText, fontSize: 14),
         ),
       ),
     );
@@ -1789,9 +1801,9 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
   Color _getProviderColor(bool isReady, bool hasService, bool hasTests) {
     if (isReady) return Colors.green;
-    if (hasService) return Colors.blue;
+    if (hasService) return _accent;
     if (hasService && hasTests) return Colors.orange;
-    return const Color(0xff0861dd); // اللون الأساسي للتطبيق
+    return _accent; // اللون الأساسي للتطبيق
   }
 
   int getCurrentStep() {

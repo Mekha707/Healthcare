@@ -146,10 +146,11 @@ class _HealthChatScreenState extends State<HealthChatScreen> {
                                           msg.message,
                                           isAi: !msg.isUser,
                                         ),
-                                        if (!msg.isUser &&
-                                            msg.doctors != null &&
-                                            msg.doctors.isNotEmpty)
-                                          _buildDoctorsList(msg.doctors),
+                                        if (!msg.isUser && msg.doctors != null)
+                                          _buildDoctorsList(
+                                            msg.doctors,
+                                            msg.suggestedSpecialty,
+                                          ),
                                         const SizedBox(height: 20),
                                       ],
                                     );
@@ -437,131 +438,172 @@ class _HealthChatScreenState extends State<HealthChatScreen> {
     );
   }
 
-  Widget _buildDoctorsList(List<Doctor> doctors) {
-    if (doctors.isEmpty) return const SizedBox.shrink();
+  Widget _buildDoctorsList(List<Doctor> doctors, String suggestedSpecialty) {
+    final bool hasDoctors = doctors.isNotEmpty;
+    final bool hasSpecialty = suggestedSpecialty.isNotEmpty;
+
+    if (!hasDoctors && !hasSpecialty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "الأطباء المقترحون لك:",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-            fontFamily: 'Cotta',
-            color: _primaryText,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          "التخصص المقترح: ${doctors.first.specialty}",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            fontFamily: 'Cotta',
-            color: _primaryText,
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 160,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: doctors.length,
-            itemBuilder: (context, index) {
-              final aiDoc = doctors[index];
-
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ProviderDetailsPage(
-                        provider: aiDoc,
-                        selectedServiceType: 'Clinic Visit',
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: 150,
-                  margin: const EdgeInsets.only(right: 10),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: _isDark
-                        ? Colors.blue.withOpacity(0.12)
-                        : Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: _isDark
-                          ? Colors.blue.withOpacity(0.2)
-                          : Colors.blue.shade100,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: _cardBg,
-                        child: Icon(Icons.person, color: _accent),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        aiDoc.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          fontFamily: 'Agency',
-                          color: _primaryText,
-                        ),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _isDark
-                              ? Colors.blue.withOpacity(0.18)
-                              : Colors.blue.shade100,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          aiDoc.specialty,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: _isDark
-                                ? Colors.blue.shade100
-                                : const Color(0xff0861dd),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            color: Colors.orange,
-                            size: 14,
-                          ),
-                          Text(
-                            aiDoc.rating.toString(),
-                            style: TextStyle(fontSize: 12, color: _primaryText),
-                          ),
-                        ],
-                      ),
-                    ],
+        if (hasSpecialty) ...[
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: _isDark
+                  ? Colors.blue.withOpacity(0.12)
+                  : Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: _isDark
+                    ? Colors.blue.withOpacity(0.2)
+                    : Colors.blue.shade100,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.medical_services_outlined, size: 14, color: _accent),
+                const SizedBox(width: 6),
+                Text(
+                  "التخصص المقترح: $suggestedSpecialty",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    fontFamily: 'Cotta',
+                    color: _accent,
                   ),
                 ),
-              );
-            },
+              ],
+            ),
           ),
-        ),
+        ],
+        if (hasDoctors) ...[
+          const SizedBox(height: 8),
+          Text(
+            "الأطباء المقترحون لك:",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              fontFamily: 'Cotta',
+              color: _primaryText,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 160,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: doctors.length,
+              itemBuilder: (context, index) {
+                final aiDoc = doctors[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProviderDetailsPage(
+                          provider: aiDoc,
+                          selectedServiceType: 'Clinic Visit',
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 150,
+                    margin: const EdgeInsets.only(right: 10),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: _isDark
+                          ? Colors.blue.withOpacity(0.12)
+                          : Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _isDark
+                            ? Colors.blue.withOpacity(0.2)
+                            : Colors.blue.shade100,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: _cardBg,
+                          child: Icon(Icons.person, color: _accent),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          aiDoc.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            fontFamily: 'Agency',
+                            color: _primaryText,
+                          ),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(top: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _isDark
+                                ? Colors.blue.withOpacity(0.18)
+                                : Colors.blue.shade100,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            aiDoc.specialty,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: _isDark
+                                  ? Colors.blue.shade100
+                                  : const Color(0xff0861dd),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              color: Colors.orange,
+                              size: 14,
+                            ),
+                            Text(
+                              aiDoc.rating.toString(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: _primaryText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ] else ...[
+          const SizedBox(height: 6),
+          Text(
+            "لا يوجد أطباء متاحون حالياً في هذا التخصص",
+            style: TextStyle(
+              fontSize: 12,
+              fontFamily: 'Agency',
+              color: _secondaryText,
+            ),
+          ),
+        ],
       ],
     );
   }

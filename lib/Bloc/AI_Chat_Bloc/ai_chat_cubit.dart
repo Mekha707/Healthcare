@@ -37,6 +37,7 @@ class AiChatCubit extends Cubit<AiChatState> {
           // ← غيّر النوع
           message: response.message,
           isUser: false,
+          suggestedSpecialty: response.suggestedSpecialty,
           doctors:
               response.recommendedDoctors, // ← List<Doctor> من الـ response
         ),

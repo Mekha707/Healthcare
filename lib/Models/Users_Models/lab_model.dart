@@ -29,13 +29,15 @@ class LabModel extends HealthcareProvider {
   });
 
   factory LabModel.fromJson(Map<String, dynamic> json) {
+    print("🏥 Lab: ${json['name']} | URL: ${json['profilePictureUrl']}");
+
     return LabModel(
       id: json['id'],
       name: json['name'],
       address: json['address'],
       rating: (json['rating'] as num).toDouble(),
       ratingsCount: json['ratingsCount'],
-      profilePictureUrl: json['profilePictureUrl'],
+      profilePictureUrl: _convertToJpg(json['profilePictureUrl'] ?? ''),
       matchedTestsNames: List<String>.from(json['matchedTestsNames'] ?? []),
       // استقبال القيم الجديدة من الـ JSON ✅
       matchedTestsCount: json['matchedTestsCount'] ?? 0,
@@ -54,4 +56,9 @@ class LabModel extends HealthcareProvider {
 
   @override
   String get subTitle => "";
+
+  static String _convertToJpg(String url) {
+    if (url.isEmpty) return '';
+    return url.replaceFirst('/upload/', '/upload/f_jpg/');
+  }
 }

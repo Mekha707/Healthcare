@@ -3,16 +3,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:healthcareapp_try1/API/user_service.dart';
+import 'package:healthcareapp_try1/Bloc/Appointment_details_/appointment_details_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/MyBookingBloc/mybooking_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/MyBookingBloc/mybooking_state.dart';
 import 'package:healthcareapp_try1/Bloc/NavigationBloc/navigation_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_event.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_state.dart';
+import 'package:healthcareapp_try1/Bloc/User_Bloc/SpecialtyBloc/specialty_bloc.dart';
+import 'package:healthcareapp_try1/Bloc/User_Bloc/SpecialtyBloc/specialty_event.dart';
+import 'package:healthcareapp_try1/Bloc/User_Bloc/SpecialtyBloc/specialty_state.dart';
 import 'package:healthcareapp_try1/Buttons/buttons.dart';
 import 'package:healthcareapp_try1/Models/Booking_Models/appointment_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/specialty_model.dart';
+import 'package:healthcareapp_try1/Pages/Booking/every_appointment_details_page.dart';
 import 'package:healthcareapp_try1/Pages/Booking/my_booking_page.dart';
 import 'package:healthcareapp_try1/Pages/Booking/universal_details_page.dart';
 import 'package:healthcareapp_try1/Widgets/home_content_ourservices_card.dart';
@@ -31,49 +37,11 @@ class HomePageContent extends StatefulWidget {
 }
 
 class _HomepageContentState extends State<HomePageContent> {
-  List<Specialty> specialties = [
-    Specialty(
-      id: "019cc30c-c8b9-71a2-a5b2-8d1bd91da326",
-      name: "Cardiology",
-      icon: Icons.favorite,
-      color: const Color(0xffe7000b),
-    ),
-    Specialty(
-      id: "019cc30d-some-uuid-for-neurology",
-      name: "Neurology",
-      icon: FontAwesomeIcons.brain,
-      color: const Color(0xff9a16fa),
-    ),
-    Specialty(
-      id: "019cc30e-some-uuid-for-pediatrics",
-      name: "Pediatrics",
-      icon: Icons.child_care,
-      color: const Color(0xff0861dd),
-    ),
-    Specialty(
-      id: "019cc30f-some-uuid-for-orthopedics",
-      name: "Orthopedics",
-      icon: FontAwesomeIcons.bone,
-      color: const Color(0xffe58017),
-    ),
-    Specialty(
-      id: "019cc310-some-uuid-for-ophthalmology",
-      name: "Ophtmalmology",
-      icon: Icons.remove_red_eye_outlined,
-      color: const Color(0xff00a63e),
-    ),
-    Specialty(
-      id: "019cc311-some-uuid-for-general",
-      name: "General",
-      icon: FontAwesomeIcons.stethoscope,
-      color: const Color(0xff5642f7),
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
     context.read<DoctorsBloc>().add(FetchDoctors());
+    context.read<SpecialtyBloc>().add(LoadSpecialties());
     _loadAppointments();
   }
 
@@ -362,7 +330,10 @@ class _HomepageContentState extends State<HomePageContent> {
                         MaterialPageRoute(builder: (_) => MyBookingPage()),
                       );
                     },
-                    child: const Text("View all"),
+                    child: Text(
+                      "View all",
+                      style: TextStyle(color: subtleText),
+                    ),
                   ),
                 ],
               ),
@@ -488,90 +459,133 @@ class _HomepageContentState extends State<HomePageContent> {
         ? AppColors.bgDark.withOpacity(0.4)
         : const Color(0xfff7f9fc);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: itemBg,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: chipColor.withOpacity(0.12),
-            backgroundImage: item.providerImage.isNotEmpty
-                ? NetworkImage(item.providerImage)
-                : null,
-            child: item.providerImage.isEmpty
-                ? Icon(Icons.person_outline, color: chipColor)
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.providerName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "${item.type} • ${item.specialty ?? item.serviceType}",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: subtleText),
-                ),
-              ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BlocProvider(
+              create: (_) =>
+                  AppointmentDetailsCubit(UserService())
+                    ..fetchDetails(item.id, item.type),
+              child: const AppointmentDetailsPage(),
             ),
           ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.access_time, size: 14, color: subtleText),
-                  const SizedBox(width: 4),
-                  Text(
-                    item.time,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: subtleText,
-                      fontWeight: FontWeight.w600,
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: itemBg,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            ClipOval(
+              child: item.providerImage.isNotEmpty
+                  ? Image.network(
+                      item.providerImage,
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => CircleAvatar(
+                        radius: 24,
+                        backgroundColor: chipColor.withOpacity(0.12),
+                        child: Icon(Icons.person_outline, color: chipColor),
+                      ),
+                      loadingBuilder: (_, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return CircleAvatar(
+                          radius: 24,
+                          backgroundColor: chipColor.withOpacity(0.12),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: chipColor,
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : CircleAvatar(
+                      radius: 24,
+                      backgroundColor: chipColor.withOpacity(0.12),
+                      child: Icon(Icons.person_outline, color: chipColor),
                     ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.providerName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "${item.type} • ${item.specialty ?? item.serviceType}",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: subtleText),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.access_time, size: 14, color: subtleText),
+                    const SizedBox(width: 4),
+                    Text(
+                      item.time,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: subtleText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                decoration: BoxDecoration(
-                  color: chipColor,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  item.status,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: chipColor,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    item.status,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -593,25 +607,52 @@ class _HomepageContentState extends State<HomePageContent> {
   // ---------------- SPECIALTY GRID ----------------
 
   Widget _buildSpecialtyGrid(bool isDark) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: specialties.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 15,
-        mainAxisSpacing: 15,
-        childAspectRatio: 0.9,
-      ),
-      itemBuilder: (context, index) => SpecialtyCard(
-        isDark: isDark,
-        icon: specialties[index].icon,
-        specialtyName: specialties[index].name,
-        iconColor: specialties[index].color,
-        backGroundColor: Theme.of(context).brightness == Brightness.dark
-            ? specialties[index].color.withOpacity(0.15)
-            : specialties[index].color.withOpacity(0.1),
-      ),
+    return BlocBuilder<SpecialtyBloc, SpecialtyState>(
+      builder: (context, state) {
+        if (state is SpecialtyLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state is SpecialtyError) {
+          return Center(
+            child: Text(
+              state.message,
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
+        }
+
+        if (state is SpecialtyLoaded) {
+          final specialties = state.specialties;
+
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: specialties.length > 9 ? 9 : specialties.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 1,
+              mainAxisSpacing: 20,
+              childAspectRatio: 0.9,
+            ),
+            itemBuilder: (context, index) {
+              final item = specialties[index];
+
+              return SpecialtyCard(
+                isDark: isDark,
+                icon: item.icon,
+                specialtyName: item.name,
+                iconColor: item.color,
+                backGroundColor: isDark
+                    ? item.color.withOpacity(0.15)
+                    : item.color.withOpacity(0.1),
+              );
+            },
+          );
+        }
+
+        return const SizedBox();
+      },
     );
   }
 
@@ -740,112 +781,92 @@ class _HomepageContentState extends State<HomePageContent> {
         itemBuilder: (context, index) {
           final doctor = doctors[index];
 
-          return Container(
-            width: 160,
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 🧑‍⚕️ Avatar
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.primary.withOpacity(0.1),
-                  // نتحقق أولاً إذا كان الرابط موجود وغير فارغ
-                  child: ClipOval(
-                    child: doctor.profilePictureUrl.isNotEmpty
-                        ? Image.network(
-                            doctor.profilePictureUrl,
-                            fit: BoxFit.cover,
-                            width: 56, // 28 * 2
-                            height: 56,
-                            errorBuilder: (context, error, stackTrace) {
-                              // لو الصورة فيها مشكلة في التحميل
-                              return const Icon(Icons.person, size: 30);
-                            },
-                          )
-                        : const Icon(
-                            Icons.person,
-                            size: 30,
-                          ), // لو الرابط أصلاً فارغ
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ProviderDetailsPage(
+                    provider: doctor,
+                    selectedServiceType: 'Clinic Visit',
                   ),
                 ),
-
-                const SizedBox(height: 10),
-
-                // 👨‍⚕️ Name
-                Text(
-                  doctor.name ?? "Doctor",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-
-                const SizedBox(height: 4),
-
-                // 🏥 Specialty
-                Text(
-                  doctor.specialty ?? "Specialist",
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-
-                const Spacer(),
-
-                // ⭐ Rating + Button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.star, size: 14, color: Colors.amber),
-                        SizedBox(width: 3),
-                        Text("4.8", style: TextStyle(fontSize: 12)),
-                      ],
+              );
+            },
+            child: Container(
+              width: 160,
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.1),
+                    child: ClipOval(
+                      child: doctor.profilePictureUrl.isNotEmpty
+                          ? Image.network(
+                              doctor.profilePictureUrl,
+                              fit: BoxFit.cover,
+                              width: 56,
+                              height: 56,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.person, size: 30),
+                            )
+                          : const Icon(Icons.person, size: 30),
                     ),
+                  ),
 
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ProviderDetailsPage(
-                              provider: doctor,
-                              selectedServiceType: 'Clinic Visit',
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          "Book",
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
+                  const SizedBox(height: 10),
+
+                  Text(
+                    doctor.name ?? "Doctor",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    doctor.specialty ?? "Specialist",
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+
+                  const Spacer(),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.star, size: 14, color: Colors.amber),
+                          SizedBox(width: 3),
+                          Text("4.8", style: TextStyle(fontSize: 12)),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 12,
+                        color: isDark ? Colors.white38 : Colors.grey.shade400,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           );
         },

@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, file_names, avoid_print, dead_code, unnecessary_null_comparison, unnecessary_to_list_in_spreads, unused_element, unused_local_variable
+// ignore_for_file: deprecated_member_use, file_names, avoid_print, dead_code, unnecessary_null_comparison, unnecessary_to_list_in_spreads, unused_element, unused_local_variable, no_leading_underscores_for_local_identifiers
 
 import 'dart:developer';
 
@@ -86,9 +86,9 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
   Color get _pageBg => _isDark ? AppColors.bgDark : Colors.grey.shade100;
   Color get _cardBg => _isDark ? AppColors.surfaceDark : Colors.white;
-  Color get _primaryText => _isDark ? AppColors.textLight : Colors.black87;
+  Color get _primaryText => _isDark ? AppColors.textDark : AppColors.textLight;
   Color get _secondaryText =>
-      _isDark ? AppColors.textLight.withOpacity(0.72) : Colors.grey.shade700;
+      _isDark ? AppColors.textDark.withOpacity(0.4) : Colors.grey.shade700;
   Color get _borderColor =>
       _isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade200;
   Color get _accent => _isDark ? Colors.blue.shade200 : const Color(0xff0861dd);
@@ -411,6 +411,8 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                               setState(() => countSelectedhours = hour);
                             },
                           ),
+                          const SizedBox(height: 10),
+
                           if (countSelectedhours != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 10),
@@ -1281,6 +1283,12 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
       }
       return null;
     });
+
+    String _convertToJpg(String url) {
+      if (url.isEmpty) return '';
+      return url.replaceFirst('/upload/', '/upload/f_jpg/');
+    }
+
     return Stack(
       children: [
         SizedBox(
@@ -1288,22 +1296,21 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
           width: double.infinity,
           child: providerData != null
               ? Image.network(
-                  providerData.profilePictureUrl,
+                  _convertToJpg(providerData.profilePictureUrl),
                   fit: BoxFit.cover,
                   cacheWidth: 800,
                   errorBuilder: (_, __, ___) => Container(
-                    color: _isDark ? AppColors.surfaceDark : Colors.blue.shade50,
-                    child: Icon(
-                      Icons.person,
-                      size: 100,
-                      color: _accent,
-                    ),
+                    color: _isDark
+                        ? AppColors.surfaceDark
+                        : Colors.blue.shade50,
+                    child: Icon(Icons.person, size: 100, color: _accent),
                   ),
                   loadingBuilder: (_, child, progress) {
                     if (progress == null) return child;
                     return Container(
-                      color:
-                          _isDark ? AppColors.surfaceDark : Colors.blue.shade50,
+                      color: _isDark
+                          ? AppColors.surfaceDark
+                          : Colors.blue.shade50,
                       child: Center(
                         child: CustomSpinner(color: _accent, size: 40),
                       ),
@@ -1312,11 +1319,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                 )
               : Container(
                   color: _isDark ? AppColors.surfaceDark : Colors.blue.shade50,
-                  child: Icon(
-                    Icons.person,
-                    size: 100,
-                    color: _accent,
-                  ),
+                  child: Icon(Icons.person, size: 100, color: _accent),
                 ),
         ),
         Container(
@@ -1545,10 +1548,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                color: isSelected ? _accent : _secondaryText,
-              ),
+              Icon(icon, color: isSelected ? _accent : _secondaryText),
               const SizedBox(height: 8),
               Text(
                 type,
@@ -1556,7 +1556,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? _accent : _primaryText,
+                  color: isSelected ? _accent : _secondaryText,
                   fontFamily: 'Agency',
                 ),
               ),
@@ -1785,10 +1785,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
         border: Border.all(color: _borderColor),
       ),
       child: Center(
-        child: Text(
-          message,
-          style: TextStyle(color: _mutedText, fontSize: 14),
-        ),
+        child: Text(message, style: TextStyle(color: _mutedText, fontSize: 14)),
       ),
     );
   }

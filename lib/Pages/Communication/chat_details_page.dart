@@ -1,195 +1,4 @@
-// // ignore_for_file: unused_field
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:healthcareapp_try1/API/chat_service.dart';
-// import 'package:healthcareapp_try1/API/signal_service.dart';
-// import 'package:healthcareapp_try1/Bloc/Message_Bloc/message_bloc.dart';
-// import 'package:healthcareapp_try1/Models/Communication/message_model.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-
-// class ChatDetailsPage extends StatefulWidget {
-//   final String chatId;
-//   final String chatName;
-//   final String? imageUrl;
-
-//   const ChatDetailsPage({
-//     super.key,
-//     required this.chatId,
-//     required this.chatName,
-//     this.imageUrl,
-//   });
-
-//   @override
-//   State<ChatDetailsPage> createState() => _ChatDetailsPageState();
-// }
-
-// class _ChatDetailsPageState extends State<ChatDetailsPage> {
-//   final SignalRService _signalRService = SignalRService();
-//   final TextEditingController _messageController = TextEditingController();
-//   late MessageBloc _bloc;
-//   String myid = "";
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     WidgetsBinding.instance.addPostFrameCallback((_) {
-//       _bloc = context.read<MessageBloc>();
-//       _setupSignalR();
-//     });
-//   }
-
-//   void _setupSignalR() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     final token = prefs.getString('token') ?? "";
-//     myid = prefs.getString('userId') ?? "";
-
-//    await _signalRService.initHub(token, (newMessageJson) {
-//       final newMessage = Message.fromJson(newMessageJson);
-//       _bloc.add(ReceiveNewMessage(newMessage)); // ← استخدم الـ reference المحفوظ
-//     });
-
-//     await _signalRService.joinChat(widget.chatId);
-//   }
-
-//   @override
-//   void dispose() {
-//     _signalRService.stopConnection();
-//     _messageController.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // وضع الـ BlocProvider هنا يضمن استقرار الـ State
-//     return BlocProvider(
-//       create: (context) =>
-//           MessageBloc(ChatService())..add(LoadMessages(widget.chatId)),
-//       child: Scaffold(
-//         backgroundColor: const Color(0xFFF7F9FC),
-//         appBar: _buildAppBar(),
-//         body: FutureBuilder<SharedPreferences>(
-//           future: SharedPreferences.getInstance(),
-//           builder: (context, snapshot) {
-//             if (!snapshot.hasData) {
-//               return const Center(child: CircularProgressIndicator());
-//             }
-
-//             myid = snapshot.data!.getString('userId') ?? "";
-
-//             return Column(
-//               children: [
-//                 Expanded(child: _buildMessagesList(myid)),
-//                 _buildInputArea(),
-//               ],
-//             );
-//           },
-//         ),
-//       ),
-//     );
-//   }
-
-//   AppBar _buildAppBar() {
-//     return AppBar(
-//       title: Row(
-//         children: [
-//           if (widget.imageUrl != null)
-//             CircleAvatar(
-//               radius: 18,
-//               backgroundImage: NetworkImage(widget.imageUrl!),
-//             ),
-//           const SizedBox(width: 10),
-//           Text(widget.chatName),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildMessagesList(String myId) {
-//     return BlocBuilder<MessageBloc, MessageState>(
-//       builder: (context, state) {
-//         if (state is MessageLoading) {
-//           return const Center(child: CircularProgressIndicator());
-//         }
-//         if (state is MessageLoaded) {
-//           return ListView.builder(
-//             reverse: true, // عشان الرسايل الجديدة تظهر تحت وفوق الكيبورد
-//             itemCount: state.data.items.length,
-//             itemBuilder: (context, index) {
-//               final msg = state.data.items[index];
-//               final bool isMe = msg.senderId == myId;
-//               return _buildMessageBubble(msg, isMe);
-//             },
-//           );
-//         }
-//         return const Center(child: Text("ابدأ الدردشة..."));
-//       },
-//     );
-//   }
-
-//   Widget _buildMessageBubble(Message msg, bool isMe) {
-//     return Align(
-//       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-//       child: Container(
-//         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-//         padding: const EdgeInsets.all(12),
-//         decoration: BoxDecoration(
-//           color: isMe ? Colors.blue : Colors.white,
-//           borderRadius: BorderRadius.circular(12),
-//         ),
-//         child: Text(
-//           msg.content,
-//           style: TextStyle(color: isMe ? Colors.white : Colors.black),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildInputArea() {
-//     return Container(
-//       padding: const EdgeInsets.all(8),
-//       color: Colors.white,
-//       child: Row(
-//         children: [
-//           Expanded(
-//             child: TextField(
-//               controller: _messageController, // الربط بالكنترولر
-//               decoration: const InputDecoration(
-//                 hintText: "اكتب رسالة...",
-//                 border: InputBorder.none,
-//               ),
-//             ),
-//           ),
-//           IconButton(
-//             icon: const Icon(Icons.send, color: Colors.blue),
-//             onPressed: () {
-//               if (_messageController.text.isNotEmpty) {
-//                 final text = _messageController.text;
-//                 _signalRService.sendMessage(widget.chatId, text);
-
-//                 final temporaryMessage = Message(
-//                   id: DateTime.now().millisecondsSinceEpoch
-//                       .toString(), // ID مؤقت
-//                   content: text,
-//                   senderId:
-//                       myid, // الـ ID بتاعك اللي جبناه من الـ SharedPreferences
-//                   createdAt: DateTime.now().toString(),
-//                   senderName: '',
-//                 );
-
-//                 context.read<MessageBloc>().add(
-//                   ReceiveNewMessage(temporaryMessage),
-//                 );
-
-//                 _messageController.clear();
-//               }
-//             },
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
+// ignore_for_file: unnecessary_null_comparison, dead_code
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -197,6 +6,7 @@ import 'package:healthcareapp_try1/API/chat_service.dart';
 import 'package:healthcareapp_try1/API/signal_service.dart';
 import 'package:healthcareapp_try1/Bloc/Message_Bloc/message_bloc.dart';
 import 'package:healthcareapp_try1/Models/Communication/message_model.dart';
+import 'package:healthcareapp_try1/core/Theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatDetailsPage extends StatefulWidget {
@@ -218,9 +28,21 @@ class ChatDetailsPage extends StatefulWidget {
 class _ChatDetailsPageState extends State<ChatDetailsPage> {
   final SignalRService _signalRService = SignalRService();
   final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController = ScrollController(); // ← هنا
+  final ScrollController _scrollController = ScrollController();
   late MessageBloc _bloc;
   String myid = "";
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _pageBg => _isDark ? AppColors.bgDark : const Color(0xFFF7F9FC);
+  Color get _cardBg => _isDark ? AppColors.surfaceDark : Colors.white;
+  Color get _primaryText => _isDark ? AppColors.textDark : Colors.black87;
+  Color get _secondaryText =>
+      _isDark ? AppColors.textDark.withOpacity(0.5) : Colors.grey.shade500;
+  Color get _borderColor =>
+      _isDark ? Colors.white.withOpacity(0.06) : Colors.grey.shade200;
+  Color get _bubbleMe => _isDark ? Colors.blue.shade700 : Colors.blue;
+  Color get _bubbleOther => _isDark ? AppColors.surfaceDark : Colors.white;
+  Color get _inputBg => _isDark ? AppColors.surfaceDark : Colors.white;
 
   @override
   void initState() {
@@ -250,14 +72,14 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
   void dispose() {
     _signalRService.stopConnection();
     _messageController.dispose();
-    _scrollController.dispose(); // ← dispose هنا
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
+      backgroundColor: _pageBg,
       appBar: _buildAppBar(),
       body: Column(
         children: [
@@ -270,15 +92,35 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
 
   AppBar _buildAppBar() {
     return AppBar(
+      elevation: 0.5,
+      backgroundColor: _cardBg,
+      titleSpacing: 0,
       title: Row(
         children: [
-          if (widget.imageUrl != null)
+          if (widget.imageUrl != null) ...[
             CircleAvatar(
               radius: 18,
               backgroundImage: NetworkImage(widget.imageUrl!),
+              backgroundColor: _isDark
+                  ? Colors.white.withOpacity(0.08)
+                  : Colors.grey.shade200,
             ),
-          const SizedBox(width: 10),
-          Text(widget.chatName),
+            const SizedBox(width: 10),
+          ],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.chatName,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Agency',
+                  color: _primaryText,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -288,8 +130,14 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
     return BlocBuilder<MessageBloc, MessageState>(
       builder: (context, state) {
         if (state is MessageLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: _isDark ? Colors.blue.shade300 : Colors.blue,
+            ),
+          );
         }
+
         if (state is MessageLoaded) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (_scrollController.hasClients) {
@@ -298,7 +146,10 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
               );
             }
           });
+
           return ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(vertical: 12),
             itemCount: state.data.items.length,
             itemBuilder: (context, index) {
               final msg = state.data.items[index];
@@ -307,7 +158,17 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
             },
           );
         }
-        return const Center(child: Text("ابدأ الدردشة..."));
+
+        return Center(
+          child: Text(
+            "Start the conversation...",
+            style: TextStyle(
+              color: _secondaryText,
+              fontFamily: 'Agency',
+              fontSize: 14,
+            ),
+          ),
+        );
       },
     );
   }
@@ -316,15 +177,55 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isMe ? Colors.blue : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+        margin: EdgeInsets.only(
+          left: isMe ? 60 : 12,
+          right: isMe ? 12 : 60,
+          top: 3,
+          bottom: 3,
         ),
-        child: Text(
-          msg.content,
-          style: TextStyle(color: isMe ? Colors.white : Colors.black),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isMe ? _bubbleMe : _bubbleOther,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(isMe ? 16 : 4),
+            bottomRight: Radius.circular(isMe ? 4 : 16),
+          ),
+          border: isMe ? null : Border.all(color: _borderColor, width: 0.5),
+          boxShadow: _isDark
+              ? []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Column(
+          crossAxisAlignment: isMe
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+          children: [
+            Text(
+              msg.content,
+              style: TextStyle(
+                color: isMe ? Colors.white : _primaryText,
+                fontSize: 13,
+                fontFamily: 'Agency',
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              msg.createdAt != null ? msg.createdAt.substring(11, 16) : "",
+              style: TextStyle(
+                fontSize: 10,
+                color: isMe ? Colors.white.withOpacity(0.6) : _secondaryText,
+                fontFamily: 'Agency',
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -332,29 +233,65 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
 
   Widget _buildInputArea() {
     return Container(
-      padding: const EdgeInsets.all(8),
-      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: _inputBg,
+        border: Border(top: BorderSide(color: _borderColor, width: 0.5)),
+      ),
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _messageController,
-              decoration: const InputDecoration(
-                hintText: "اكتب رسالة...",
-                border: InputBorder.none,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: _isDark
+                    ? Colors.white.withOpacity(0.06)
+                    : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: _borderColor, width: 0.5),
+              ),
+              child: TextField(
+                controller: _messageController,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _primaryText,
+                  fontFamily: 'Agency',
+                ),
+                decoration: InputDecoration(
+                  hintText: "Write a message...",
+                  hintStyle: TextStyle(
+                    fontSize: 13,
+                    color: _secondaryText,
+                    fontFamily: 'Agency',
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                ),
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.send, color: Colors.blue),
-            onPressed: () {
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () {
               final text = _messageController.text.trim();
               if (text.isEmpty) return;
-
               _signalRService.sendMessage(widget.chatId, text);
-
               _messageController.clear();
             },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: _isDark ? Colors.blue.shade700 : Colors.blue,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.send_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
           ),
         ],
       ),

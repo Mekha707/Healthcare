@@ -1,4 +1,5 @@
 // ignore_for_file: unused_local_variable
+import 'dart:io';
 import 'dart:ui'; // 🔥 مهم للـ blur
 
 import 'package:app_links/app_links.dart';
@@ -41,6 +42,16 @@ import 'package:healthcareapp_try1/Widgets/slide_route.dart';
 import 'package:healthcareapp_try1/core/Theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class MyHttpOverrides extends HttpOverrides {
+  // ✅ أضف الـ class هنا
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
@@ -50,6 +61,7 @@ void main() async {
 
   final authService = AuthService();
 
+  HttpOverrides.global = MyHttpOverrides();
   runApp(
     MultiBlocProvider(
       providers: [
@@ -86,7 +98,7 @@ void main() async {
         BlocProvider(create: (context) => MedicalRecordCubit(authService)),
         BlocProvider(create: (ctx) => MessageBloc(ChatService())),
         BlocProvider(create: (ctx) => AiChatCubit()),
-
+        BlocProvider(create: (context) => SpecialtyBloc(UserService())),
         // BlocProvider(create: (context) => ChatCubit()),
         BlocProvider(create: (_) => ThemeCubit(initialTheme)), // 🔥 هنا السر
         RepositoryProvider<UserService>(create: (_) => UserService()),

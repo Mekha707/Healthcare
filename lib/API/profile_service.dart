@@ -3,23 +3,20 @@
 import 'package:dio/dio.dart';
 import 'package:healthcareapp_try1/Models/Auth_Models/update_profile_model.dart';
 import 'package:healthcareapp_try1/Models/Booking_Models/appointment_model.dart';
+import 'package:dio/io.dart';
 
 class ProfileService {
   final Dio dio = Dio();
-  final String baseUrl =
-      "https://unalterably-unasphalted-felton.ngrok-free.dev";
+  final String baseUrl = "https://healthcare52.runasp.net";
 
   Future<void> updateProfile(UpdateProfileModel model) async {
-    await dio.put(
-      "https://unalterably-unasphalted-felton.ngrok-free.dev",
-      data: model.toJson(),
-    );
+    await dio.put("https://healthcare52.runasp.net", data: model.toJson());
   }
 
   Future<List<AppointmentModel>> getPatientHistory(String token) async {
     try {
       final response = await dio.get(
-        "$baseUrl/api/Appointments/me/patient-history",
+        "https://healthcare52.runasp.net/api/Appointments/me/patient-history",
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 

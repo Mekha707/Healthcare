@@ -23,9 +23,10 @@ class _PostCardState extends State<PostCard> {
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   Color get _cardBg => _isDark ? AppColors.surfaceDark : Colors.white;
-  Color get _primaryText => _isDark ? AppColors.textDark : Colors.grey.shade600;
-  Color get _secondaryText =>
-      _isDark ? AppColors.textDark.withOpacity(0.7) : Colors.grey.shade300;
+  Color get _primaryText => _isDark ? AppColors.textDark : AppColors.textLight;
+  Color get _secondaryText => _isDark
+      ? AppColors.textDark.withOpacity(0.7)
+      : AppColors.textLight.withOpacity(0.7);
   Color get _borderColor =>
       _isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE0E0E0);
   Color get _accent => _isDark ? Colors.blue.shade200 : const Color(0xFF185FA5);

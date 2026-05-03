@@ -41,7 +41,7 @@ class LocationTileWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.08),
+          color: Colors.red.withOpacity(0.3),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(

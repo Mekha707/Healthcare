@@ -12,6 +12,7 @@ import 'package:healthcareapp_try1/Widgets/success_lottie_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:healthcareapp_try1/core/theme/app_colors.dart';
 
 class BookingConfirmationPage extends StatelessWidget {
   final HealthcareProvider provider;
@@ -22,10 +23,11 @@ class BookingConfirmationPage extends StatelessWidget {
   final String token;
   final double? totalFee;
   final double? serviceFee;
-  final String providerType; // ✅ جديد
-  final int? hours; // ✅ للنيرس بس
+  final String providerType;
+  final int? hours;
   final List<String>? labTestsIds;
   final List<String>? labTestsNames;
+
   const BookingConfirmationPage({
     super.key,
     required this.provider,
@@ -56,8 +58,8 @@ class BookingConfirmationPage extends StatelessWidget {
         providerType: providerType,
         hours: hours,
         totalFee: totalFee,
-        labTestsIds: labTestsIds, // ✅ ده كان ناقص
-        labTestsNames: labTestsNames, // ✅ جديد
+        labTestsIds: labTestsIds,
+        labTestsNames: labTestsNames,
       ),
     );
   }
@@ -100,9 +102,26 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
   final TextEditingController _addressController = TextEditingController();
   String? _savedAddress;
 
+  // ─── Dark-mode helpers ────────────────────────────────────────────────────
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+
+  Color get _pageBg => _isDark ? AppColors.bgDark : Colors.grey.shade100;
+  Color get _cardBg => _isDark ? AppColors.surfaceDark : Colors.white;
+  Color get _primaryText => _isDark ? AppColors.textDark : AppColors.textLight;
+  Color get _secondaryText => _isDark
+      ? AppColors.textDark.withOpacity(0.6)
+      : AppColors.textLight.withOpacity(0.6);
+  Color get _borderColor =>
+      _isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade200;
+  Color get _accent => _isDark ? Colors.blue.shade200 : const Color(0xff0861dd);
+  Color get _hintColor =>
+      _isDark ? Colors.white.withOpacity(0.35) : Colors.grey.shade400;
+  Color get _inputFill =>
+      _isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50;
+  // ─────────────────────────────────────────────────────────────────────────
+
   bool get _isAddressRequired =>
-      (widget.selectedService == "Home Visit" ||
-      widget.providerType == "Nurse");
+      widget.selectedService == "Home Visit" || widget.providerType == "Nurse";
 
   bool get _isAddressValid => _addressController.text.trim().isNotEmpty;
 
@@ -110,23 +129,18 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
   void initState() {
     super.initState();
     _loadSavedAddress();
-
-    _addressController.addListener(() {
-      setState(() {}); // عشان يعمل rebuild للزرار
-    });
+    _addressController.addListener(() => setState(() {}));
   }
 
   Future<void> _loadSavedAddress() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // جرب تجيبه بأكتر من طريقة
     final address =
         prefs.getString('address') ??
         prefs.getString('user_address') ??
         prefs.getString('userAddress') ??
         '';
 
-    // لو مش لاقيه منفرد، جرب من الـ user JSON
     if (address.isEmpty) {
       final userJson =
           prefs.getString('user') ?? prefs.getString('userData') ?? '';
@@ -152,67 +166,54 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
     super.dispose();
   }
 
+  // ─── Build ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<BookingCubit, BookingState>(
       listener: (context, state) {
-        // 1. حالة التحميل (Loading)
         if (state is BookingLoading) {
           showDialog(
             context: context,
-            barrierDismissible:
-                false, // ميعرفش يقفله بإيده عشان ميحصلش Duplicate للحجز
-            builder: (context) => const Center(child: SizedBox()),
+            barrierDismissible: false,
+            builder: (_) => const Center(child: SizedBox()),
           );
-        }
-        // 2. حالة النجاح (Success) - اللي إنت كاتبها
-        else if (state is BookingSuccess) {
-          // لو فيه Dialog تحميل مفتوح اقفله الأول
+        } else if (state is BookingSuccess) {
           if (Navigator.canPop(context)) Navigator.pop(context);
 
           if (widget.selectedService == "Online" && state.paymentUrl != null) {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    PaymentScreen(paymentUrl: state.paymentUrl!),
+                builder: (_) => PaymentScreen(paymentUrl: state.paymentUrl!),
                 fullscreenDialog: true,
               ),
-            ).then((isPaymentSuccessful) {
-              if (isPaymentSuccessful == true) {
-                _showSuccessDialog(context);
-              }
+            ).then((ok) {
+              if (ok == true) _showSuccessDialog(context);
             });
           } else {
             _showSuccessDialog(context);
           }
-        }
-        // 3. حالة الخطأ (Error)
-        else if (state is BookingError) {
-          // لو فيه Dialog تحميل مفتوح اقفله
+        } else if (state is BookingError) {
           if (Navigator.canPop(context)) Navigator.pop(context);
-
-          // اظهر رسالة الخطأ للمستخدم (SnackBar)
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
         }
       },
-
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: Colors.grey[100],
+          backgroundColor: _pageBg,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: _cardBg,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+              icon: Icon(Icons.arrow_back_ios_new, color: _primaryText),
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text(
+            title: Text(
               'Confirm Booking',
               style: TextStyle(
-                color: Colors.black,
+                color: _primaryText,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Cotta',
               ),
@@ -230,40 +231,16 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
                 _buildLabTestsCard(),
                 const SizedBox(height: 16),
                 _buildNotesField(),
-                if (widget.selectedService == "Home Visit" ||
-                    widget.providerType == "Nurse") ...[
+                if (_isAddressRequired) ...[
                   const SizedBox(height: 16),
                   _buildAddressField(),
                 ],
                 const SizedBox(height: 10),
-
-                widget.selectedService == "Online"
-                    ? Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        padding: EdgeInsets.all(16),
-                        child: Text(
-                          "Online consultations can be paid for via online payment only",
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 14,
-                            fontFamily: 'Agency',
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : SizedBox(height: 1),
+                if (widget.selectedService == "Online")
+                  _buildOnlineNotice()
+                else
+                  const SizedBox(height: 1),
                 const SizedBox(height: 10),
-
                 _buildConfirmButton(context, state),
                 const SizedBox(height: 10),
               ],
@@ -274,20 +251,10 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
     );
   }
 
+  // ─── Widgets ──────────────────────────────────────────────────────────────
+
   Widget _buildProviderCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return _card(
       child: Row(
         children: [
           ClipRRect(
@@ -300,8 +267,10 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
               errorBuilder: (_, __, ___) => Container(
                 width: 70,
                 height: 70,
-                color: Colors.blue.shade50,
-                child: const Icon(Icons.person, color: Colors.blue, size: 40),
+                color: _isDark
+                    ? Colors.blue.shade900.withOpacity(0.4)
+                    : Colors.blue.shade50,
+                child: Icon(Icons.person, color: _accent, size: 40),
               ),
             ),
           ),
@@ -312,10 +281,11 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
               children: [
                 Text(
                   widget.provider.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Cotta',
+                    color: _primaryText,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -323,7 +293,7 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
                   widget.provider.subTitle,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.blue[700],
+                    color: _accent,
                     fontFamily: 'Agency',
                   ),
                 ),
@@ -332,7 +302,7 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
                   widget.provider.location,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[500],
+                    color: _secondaryText,
                     fontFamily: 'Agency',
                   ),
                 ),
@@ -345,28 +315,17 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
   }
 
   Widget _buildDetailsCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Booking Details',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               fontFamily: 'Cotta',
+              color: _primaryText,
             ),
           ),
           const SizedBox(height: 16),
@@ -376,14 +335,14 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
             widget.selectedService,
             Colors.blue,
           ),
-          const Divider(height: 24),
+          Divider(height: 24, color: _borderColor),
           _buildDetailRow(
             FontAwesomeIcons.calendarDay,
             'Date',
             DateFormat('EEEE, dd MMM yyyy').format(widget.selectedDate),
             Colors.orange,
           ),
-          const Divider(height: 24),
+          Divider(height: 24, color: _borderColor),
           _buildDetailRow(
             FontAwesomeIcons.clock,
             'Time',
@@ -392,14 +351,13 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
                 : widget.selectedTime,
             Colors.green,
           ),
-
           if (widget.totalFee != null && widget.totalFee! > 0) ...[
-            const Divider(height: 24),
+            Divider(height: 24, color: _borderColor),
             _buildDetailRow(
               FontAwesomeIcons.moneyBillWave,
               'Total Amount',
               '${widget.totalFee!.toStringAsFixed(2)} EGP',
-              Colors.deepPurpleAccent, // لون مميز للسعر
+              Colors.deepPurpleAccent,
             ),
           ],
         ],
@@ -418,7 +376,7 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withOpacity(_isDark ? 0.18 : 0.10),
             borderRadius: BorderRadius.circular(10),
           ),
           child: FaIcon(icon, color: color, size: 16),
@@ -431,17 +389,18 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[500],
+                color: _secondaryText,
                 fontFamily: 'Agency',
               ),
             ),
             const SizedBox(height: 2),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 fontFamily: 'Agency',
+                color: _primaryText,
               ),
             ),
           ],
@@ -451,48 +410,24 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
   }
 
   Widget _buildNotesField() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Notes (Optional)',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
               fontFamily: 'Cotta',
+              color: _primaryText,
             ),
           ),
           const SizedBox(height: 10),
-          TextField(
+          _styledTextField(
             controller: _notesController,
+            hintText: 'Any notes for the doctor...',
             maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'Any notes for the doctor...',
-              hintStyle: TextStyle(
-                color: Colors.grey[400],
-                fontFamily: 'Agency',
-              ),
-              filled: true,
-              fillColor: Colors.grey[50],
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xff0861dd)),
-              ),
-            ),
           ),
         ],
       ),
@@ -500,60 +435,46 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
   }
 
   Widget _buildAddressField() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Home Address',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Cotta',
+                  color: _primaryText,
                 ),
               ),
-              // ✅ زرار يجيب الـ address المحفوظ
               if (_savedAddress != null && _savedAddress!.isNotEmpty)
                 GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _addressController.text = _savedAddress!;
-                    });
-                  },
+                  onTap: () =>
+                      setState(() => _addressController.text = _savedAddress!),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xff0861dd).withOpacity(0.1),
+                      color: _accent.withOpacity(0.10),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: const Color(0xff0861dd).withOpacity(0.3),
-                      ),
+                      border: Border.all(color: _accent.withOpacity(0.30)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.my_location,
-                          size: 14,
-                          color: Color(0xff0861dd),
-                        ),
-                        SizedBox(width: 4),
+                        Icon(Icons.my_location, size: 14, color: _accent),
+                        const SizedBox(width: 4),
                         Text(
                           'Use My Address',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xff0861dd),
+                            color: _accent,
                             fontFamily: 'Agency',
                             fontWeight: FontWeight.w600,
                           ),
@@ -565,45 +486,38 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
             ],
           ),
           const SizedBox(height: 10),
-          TextField(
+          _styledTextField(
             controller: _addressController,
-            decoration: InputDecoration(
-              hintText: 'Enter your address...',
-              hintStyle: TextStyle(
-                color: Colors.grey[400],
-                fontFamily: 'Agency',
-              ),
-              filled: true,
-              fillColor: Colors.grey[50],
-              prefixIcon: const Icon(
-                Icons.location_on_outlined,
-                color: Colors.red,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xff0861dd)),
-              ),
-              errorText: _isAddressRequired && !_isAddressValid
-                  ? "Address is required"
-                  : null,
+            hintText: 'Enter your address...',
+            prefixIcon: const Icon(
+              Icons.location_on_outlined,
+              color: Colors.red,
             ),
+            errorText: _isAddressRequired && !_isAddressValid
+                ? "Address is required"
+                : null,
           ),
         ],
       ),
     );
   }
 
+  Widget _buildOnlineNotice() {
+    return _card(
+      child: Text(
+        "Online consultations can be paid for via online payment only",
+        style: TextStyle(
+          color: _secondaryText,
+          fontSize: 14,
+          fontFamily: 'Agency',
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
   Widget _buildConfirmButton(BuildContext context, BookingState state) {
     final isLoading = state is BookingLoading;
-
     final isDisabled = isLoading || (_isAddressRequired && !_isAddressValid);
 
     return SizedBox(
@@ -612,8 +526,10 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
       child: ElevatedButton(
         onPressed: isDisabled ? null : () => _onConfirm(context),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xff0861dd),
-          disabledBackgroundColor: Colors.grey.shade300,
+          backgroundColor: _accent,
+          disabledBackgroundColor: _isDark
+              ? Colors.white.withOpacity(0.12)
+              : Colors.grey.shade300,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -634,38 +550,30 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
   }
 
   Widget _buildLabTestsCard() {
-    // نتحقق لو فيه أسامي تحاليل موجودة
     if (widget.labTestsNames == null || widget.labTestsNames!.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    return Container(
+    return _card(
       margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.biotech_rounded, color: Colors.teal, size: 22),
-              SizedBox(width: 8),
+              Icon(
+                Icons.biotech_rounded,
+                color: _isDark ? Colors.teal.shade200 : Colors.teal,
+                size: 22,
+              ),
+              const SizedBox(width: 8),
               Text(
                 'Selected Lab Tests',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Cotta',
+                  color: _primaryText,
                 ),
               ),
             ],
@@ -675,21 +583,24 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
             spacing: 8,
             runSpacing: 8,
             children: widget.labTestsNames!.map((testName) {
+              final chipColor = _isDark ? Colors.teal.shade200 : Colors.teal;
               return Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.teal.withOpacity(0.08), // خلفية خفيفة Teal
+                  color: chipColor.withOpacity(_isDark ? 0.15 : 0.08),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.teal.withOpacity(0.3)),
+                  border: Border.all(
+                    color: chipColor.withOpacity(_isDark ? 0.35 : 0.30),
+                  ),
                 ),
                 child: Text(
                   testName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Colors.teal, // لون النص Teal
+                    color: chipColor,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Agency',
                   ),
@@ -702,14 +613,74 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
     );
   }
 
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  /// Shared card container with dark-aware background + shadow.
+  Widget _card({required Widget child, EdgeInsets? margin}) {
+    return Container(
+      margin: margin,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: _isDark
+                ? Colors.black.withOpacity(0.25)
+                : Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  /// Shared text-field with dark-aware styling.
+  Widget _styledTextField({
+    required TextEditingController controller,
+    required String hintText,
+    int maxLines = 1,
+    Widget? prefixIcon,
+    String? errorText,
+  }) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: _borderColor),
+    );
+    final focusedBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: _accent),
+    );
+
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: TextStyle(color: _primaryText, fontFamily: 'Agency'),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(color: _hintColor, fontFamily: 'Agency'),
+        filled: true,
+        fillColor: _inputFill,
+        prefixIcon: prefixIcon,
+        border: border,
+        enabledBorder: border,
+        focusedBorder: focusedBorder,
+        errorText: errorText,
+        errorStyle: const TextStyle(fontFamily: 'Agency'),
+      ),
+    );
+  }
+
+  // ─── Logic ────────────────────────────────────────────────────────────────
+
   void _onConfirm(BuildContext context) {
-    String appointmentType;
-    bool isNurse = widget.providerType == "Nurse";
-    bool isDoctorHomeVisit =
+    final isNurse = widget.providerType == "Nurse";
+    final isDoctorHomeVisit =
         widget.providerType == "Doctor" &&
         widget.selectedService == "Home Visit";
 
-    // 1️⃣ التحقق من العنوان
     String? address = _addressController.text.trim();
     if ((isNurse || isDoctorHomeVisit) && address.isEmpty) {
       if (_savedAddress != null && _savedAddress!.isNotEmpty) {
@@ -722,56 +693,50 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
       }
     }
 
-    // 2️⃣ تحديد نوع الموعد (AppointmentType)
-    switch (widget.selectedService) {
-      case "Clinic Visit":
-        appointmentType = "OnSiteVisit";
-        break;
-      case "Home Visit":
-        appointmentType = isNurse ? "QuickVisit" : "HomeVisit";
-        break;
-      case "Hourly Rate":
-        appointmentType = "HourlyStay";
-        break;
-      case "Lab Visit":
-        appointmentType = "OnSiteVisit";
-        break;
-      case "Online":
-        appointmentType = "Online";
-        break;
-      default:
-        appointmentType = widget.selectedService;
+    String appointmentType;
+
+    // 2️⃣ تحديد نوع الموعد
+    if (isNurse) {
+      // الـ Nurse عنده خدمتين بس
+      appointmentType = widget.selectedService == "Hourly Rate"
+          ? "HourlyStay"
+          : "QuickVisit";
+    } else {
+      switch (widget.selectedService) {
+        case "Clinic Visit":
+          appointmentType = "OnSiteVisit";
+          break;
+        case "Home Visit":
+          appointmentType = "HomeVisit";
+          break;
+        case "Lab Visit":
+          appointmentType = "OnSiteVisit";
+          break;
+        case "Online":
+          appointmentType = "Online";
+          break;
+        default:
+          appointmentType = widget.selectedService;
+      }
     }
 
-    // 3️⃣ تحويل الوقت بدقة لتنسيق 24 ساعة (HH:mm:ss)
     String finalTime;
     try {
-      // هذه السطر سيحول "5:00 PM" إلى "17:00:00"
-      // ويحول "5:00 AM" إلى "05:00:00"
-      DateTime tempTime = DateFormat.jm().parse(widget.selectedTime);
+      final tempTime = DateFormat.jm().parse(widget.selectedTime);
       finalTime = DateFormat("HH:mm:ss").format(tempTime);
-    } catch (e) {
-      // إذا فشل التحويل (مثلاً الوقت مخزن أصلاً بصيغة 24 ساعة)
-      String rawTime = widget.selectedTime.split(
-        ' ',
-      )[0]; // نأخذ الجزء الأول فقط
-      if (rawTime.length == 4)
-        rawTime = "0$rawTime"; // إضافة صفر حماية مثل 5:00 تصبح 05:00
-      finalTime = rawTime.contains(':') && rawTime.length <= 5
-          ? "$rawTime:00"
-          : rawTime;
+    } catch (_) {
+      String raw = widget.selectedTime.split(' ')[0];
+      if (raw.length == 4) raw = "0$raw";
+      finalTime = raw.contains(':') && raw.length <= 5 ? "$raw:00" : raw;
     }
 
-    print(
-      "Final Time to be sent: $finalTime",
-    ); // تأكد من رؤية 17:00:00 في الـ Log
+    print("Final Time to be sent: $finalTime");
 
-    // 4️⃣ إرسال الطلب
     context.read<BookingCubit>().confirmBooking(
       providerId: widget.provider.id,
       slotId: widget.providerType == "Lab" ? "" : widget.slotId,
       appointmentType: appointmentType,
-      startTime: finalTime, // التأكد أن الوقت يقع داخل الـ Shift المختار
+      startTime: finalTime,
       token: widget.token,
       providerType: widget.providerType,
       notes: _notesController.text.trim(),
@@ -786,35 +751,32 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+      builder: (_) => AlertDialog(
+        backgroundColor: _cardBg,
         title: Column(
           children: [
-            SuccessLottieWidget(),
-            Text("Booking Confirmed!", style: TextStyle(fontFamily: 'Cotta')),
+            const SuccessLottieWidget(),
+            Text(
+              "Booking Confirmed!",
+              style: TextStyle(fontFamily: 'Cotta', color: _primaryText),
+            ),
           ],
         ),
         content: Text(
           "Your appointment and payment have been processed successfully.",
           textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Agency'),
+          style: TextStyle(fontFamily: 'Agency', color: _secondaryText),
         ),
         actions: [
           TextButton(
             style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all(
-                const Color(0xff0861dd),
-              ),
+              backgroundColor: MaterialStateProperty.all(_accent),
               foregroundColor: MaterialStateProperty.all(Colors.white),
               shape: MaterialStateProperty.all(
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-            onPressed: () {
-              // بيرجع لأول شاشة خالص في التطبيق (Home)
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
+            onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
             child: const Text(
               "Back to Booking Page",
               style: TextStyle(

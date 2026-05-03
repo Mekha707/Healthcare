@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthService {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: "https://unalterably-unasphalted-felton.ngrok-free.dev",
+      baseUrl: "https://healthcare52.runasp.net",
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
       headers: {

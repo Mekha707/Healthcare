@@ -26,7 +26,8 @@ class _HealthChatScreenState extends State<HealthChatScreen> {
   String? selectedFilePath;
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get _pageBg => _isDark ? AppColors.bgDark : Colors.grey.shade100;
+  Color get _pageBg =>
+      _isDark ? AppColors.bgDark : Theme.of(context).scaffoldBackgroundColor;
   Color get _cardBg => _isDark ? AppColors.surfaceDark : Colors.white;
   Color get _primaryText => _isDark ? AppColors.textDark : Colors.black87;
   Color get _secondaryText =>
@@ -463,17 +464,22 @@ class _HealthChatScreenState extends State<HealthChatScreen> {
               ),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              // ← شيل mainAxisSize: MainAxisSize.min
               children: [
                 Icon(Icons.medical_services_outlined, size: 14, color: _accent),
                 const SizedBox(width: 6),
-                Text(
-                  "التخصص المقترح: $suggestedSpecialty",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    fontFamily: 'Cotta',
-                    color: _accent,
+                Flexible(
+                  // ← أضف Flexible هنا
+                  child: Text(
+                    "التخصص المقترح: $suggestedSpecialty",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      fontFamily: 'Cotta',
+                      color: _accent,
+                    ),
+                    maxLines: 2, // ← يسمح بسطرين لو النص طويل
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],

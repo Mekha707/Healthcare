@@ -9,7 +9,7 @@ class ChatService {
   // تعريف الـ Dio instance
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: 'https://unalterably-unasphalted-felton.ngrok-free.dev/api',
+      baseUrl: 'https://healthcare52.runasp.net/api',
       connectTimeout: const Duration(seconds: 5), // وقت انتظار الاتصال
       receiveTimeout: const Duration(seconds: 3), // وقت انتظار الرد
       headers: {

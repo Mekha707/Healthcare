@@ -6,7 +6,7 @@ import 'package:healthcareapp_try1/Models/AI/ai_chat_response.dart';
 class AiChatService {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: "https://unalterably-unasphalted-felton.ngrok-free.dev/",
+      baseUrl: "https://healthcare52.runasp.net/",
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
     ),
@@ -23,7 +23,6 @@ class AiChatService {
       final Map<String, dynamic> body = {"message": message};
 
       print("=== AI REQUEST ===");
-      print("URL: api/Patients/ai-chatbot-model");
 
       print("Token: $token");
       print("Body: $body");

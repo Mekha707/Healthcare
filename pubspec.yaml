@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
-  font_awesome_flutter: ^10.12.0
+  font_awesome_flutter: ^10.7.0
   liquid_swipe: ^3.1.0
   equatable: ^2.0.8
   dio: ^5.4.0

@@ -11,8 +11,7 @@ class AppointmentRepository {
           dio ??
           Dio(
             BaseOptions(
-              baseUrl:
-                  'https://unalterably-unasphalted-felton.ngrok-free.dev', // ← غير ده
+              baseUrl: 'https://healthcare52.runasp.net', // ← غير ده
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 10),
             ),

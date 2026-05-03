@@ -33,14 +33,29 @@ class _FeedScreenState extends State<FeedScreen> {
   String? _selectedSpecialtyId;
   Timer? _debounce;
 
+  // ─── Theme helpers ────────────────────────────────────────────────────────
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get _pageBg => _isDark ? AppColors.bgDark : Colors.grey.shade100;
+  Color get _pageBg =>
+      _isDark ? AppColors.bgDark : Theme.of(context).scaffoldBackgroundColor;
   Color get _cardBg => _isDark ? AppColors.surfaceDark : Colors.white;
-  Color get _primaryText => _isDark ? AppColors.textDark : AppColors.textDark;
+  Color get _accent => _isDark ? Colors.blue.shade200 : const Color(0xff0861dd);
+  Color get _primaryText =>
+      _isDark ? AppColors.textDark : const Color(0xff0d1b4b);
   Color get _secondaryText =>
-      _isDark ? AppColors.textDark.withOpacity(0.7) : Colors.grey.shade600;
+      _isDark ? AppColors.textDark.withOpacity(0.60) : Colors.grey.shade600;
   Color get _borderColor =>
-      _isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE0E0E0);
+      _isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade200;
+  Color get _inputFill =>
+      _isDark ? Colors.white.withOpacity(0.05) : Colors.white;
+  Color get _iconBg => _isDark
+      ? Colors.blue.shade900.withOpacity(0.35)
+      : const Color(0xffe8f0fe);
+  BoxShadow get _cardShadow => BoxShadow(
+    color: _isDark ? Colors.black38 : Colors.black.withOpacity(0.06),
+    blurRadius: 20,
+    offset: const Offset(0, 6),
+  );
+  // ─────────────────────────────────────────────────────────────────────────
 
   @override
   void initState() {
@@ -69,232 +84,134 @@ class _FeedScreenState extends State<FeedScreen> {
     super.dispose();
   }
 
+  // ─── Build ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _pageBg,
-      appBar: AppBar(
-        title: const Text(
-          'Health Community',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            fontFamily: 'Cotta',
+      appBar: _buildAppBar(),
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          _buildSpecialtyDropdown(),
+          Expanded(child: _buildFeed()),
+        ],
+      ),
+    );
+  }
+
+  // ─── AppBar ───────────────────────────────────────────────────────────────
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: _pageBg,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+      centerTitle: true,
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: _iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.health_and_safety_outlined,
+              size: 16,
+              color: _accent,
+            ),
           ),
-        ),
-        centerTitle: true,
-        backgroundColor: _pageBg,
-        foregroundColor: _primaryText,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.black.withOpacity(_isDark ? 0.18 : 0.08),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(14)),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none_rounded),
+          const SizedBox(width: 8),
+          Text(
+            'Health Community',
+            style: TextStyle(
+              color: _primaryText,
+              fontWeight: FontWeight.bold,
+              fontSize: 17,
+              fontFamily: 'Cotta',
+            ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.only(bottom: 20, left: 5, right: 5, top: 0),
-        child: Column(
-          children: [
-            Container(
-              color: _cardBg,
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: TextField(
-                controller: _searchController,
-                textDirection: TextDirection.rtl,
-                style: TextStyle(color: _primaryText),
-                decoration: InputDecoration(
-                  hintText: 'ابحث في المقالات...',
-                  hintTextDirection: TextDirection.rtl,
-                  hintStyle: TextStyle(
-                    color: _secondaryText,
-                    fontFamily: 'Agency',
-                  ),
-                  prefixIcon: Icon(Icons.search, color: _secondaryText),
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.tune, color: _secondaryText),
-                    onPressed: _showFilterSheet,
-                  ),
-                  filled: true,
-                  fillColor: _isDark
-                      ? AppColors.bgDark.withOpacity(0.8)
-                      : Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: _borderColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: _borderColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xff0861dd)),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
+    );
+  }
+
+  // ─── Search bar ───────────────────────────────────────────────────────────
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _cardBg,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [_cardShadow],
+        ),
+        child: TextField(
+          controller: _searchController,
+          textDirection: TextDirection.rtl,
+          style: TextStyle(
+            color: _primaryText,
+            fontFamily: 'Agency',
+            fontSize: 14,
+          ),
+          decoration: InputDecoration(
+            hintText: 'ابحث في المقالات...',
+            hintTextDirection: TextDirection.rtl,
+            hintStyle: TextStyle(
+              color: _secondaryText,
+              fontFamily: 'Agency',
+              fontSize: 13,
+            ),
+            prefixIcon: Container(
+              margin: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: _iconBg,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.search_rounded, size: 15, color: _accent),
+            ),
+            suffixIcon: GestureDetector(
+              onTap: _showFilterSheet,
+              child: Container(
+                margin: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: _iconBg,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                onSubmitted: (_) => _applyFilters(),
+                child: Icon(Icons.tune_rounded, size: 15, color: _accent),
               ),
             ),
-            buildDropDownSpecialty(context),
-            Expanded(
-              child: BlocBuilder<PostBloc, PostState>(
-                builder: (context, state) {
-                  if (state is PostLoading) {
-                    return Center(
-                      child: CustomSpinner(
-                        size: 40,
-                        color: _isDark
-                            ? AppColors.textLight
-                            : Colors.blueAccent,
-                      ),
-                    );
-                  }
-
-                  if (state is PostError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.wifi_off_rounded,
-                              size: 48,
-                              color: _secondaryText,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              state.message,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: _secondaryText),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _applyFilters,
-                              child: const Text('إعادة المحاولة'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  if (state is PostLoaded) {
-                    return RefreshIndicator(
-                      onRefresh: () async => _applyFilters(),
-                      child: ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          const InfoBanner(),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${state.totalCount} مقال',
-                            textDirection: TextDirection.rtl,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: _secondaryText,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          ...state.posts.map((post) => PostCard(post: post)),
-                          if (state.hasNextPage)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  context.read<PostBloc>().add(
-                                    FetchPostsEvent(
-                                      params: state.activeParams.copyWith(
-                                        page: state.currentPage + 1,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(color: _borderColor),
-                                  foregroundColor: _primaryText,
-                                ),
-                                child: const Text('تحميل المزيد'),
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return const SizedBox();
-                },
-              ),
+            filled: true,
+            fillColor: Colors.transparent,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
             ),
-          ],
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: _accent, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+          ),
+          onSubmitted: (_) => _applyFilters(),
         ),
       ),
     );
   }
 
-  void _showFilterSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: _cardBg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              'فلترة',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: _primaryText,
-              ),
-              textDirection: TextDirection.rtl,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Switch(value: false, onChanged: (_) {}),
-                Text(
-                  'البوستات المعلقة فقط',
-                  textDirection: TextDirection.rtl,
-                  style: TextStyle(color: _primaryText),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _applyFilters();
-                },
-                child: const Text('تطبيق'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildDropDownSpecialty(BuildContext context) {
+  // ─── Specialty dropdown ───────────────────────────────────────────────────
+  Widget _buildSpecialtyDropdown() {
     return BlocBuilder<SpecialtyBloc, SpecialtyState>(
       builder: (context, state) {
         final items = state is SpecialtyLoaded
@@ -302,137 +219,178 @@ class _FeedScreenState extends State<FeedScreen> {
             : <Specialty>[];
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Theme(
-            data: Theme.of(context).copyWith(
-              canvasColor: _isDark ? AppColors.surfaceDark : Colors.white,
-            ),
-            child: CustomDropdown<Specialty>.search(
-              controller: _specialtyController,
-              items: items,
-              hintText: state is SpecialtyLoading
-                  ? 'Loading specialties...'
-                  : 'Select medical specialty',
-              excludeSelected: false,
-              onChanged: (Specialty? value) {
-                setState(() {
-                  _selectedSpecialtyId = value?.id;
-                });
-
-                if (_debounce?.isActive ?? false) _debounce!.cancel();
-                _debounce = Timer(const Duration(milliseconds: 500), () {
-                  _applyFilters();
-                });
-              },
-              headerBuilder: (context, selectedItem, _) {
-                if (selectedItem == null) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          child: CustomDropdown<Specialty>.search(
+            controller: _specialtyController,
+            items: items,
+            hintText: state is SpecialtyLoading
+                ? 'Loading...'
+                : 'Select medical specialty',
+            excludeSelected: false,
+            onChanged: (Specialty? value) {
+              setState(() => _selectedSpecialtyId = value?.id);
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(
+                const Duration(milliseconds: 500),
+                _applyFilters,
+              );
+            },
+            headerBuilder: (context, selectedItem, _) {
+              if (selectedItem == null) {
+                return Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: _iconBg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.medical_services_outlined,
+                        size: 14,
+                        color: _accent,
+                      ),
                     ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Select medical specialty',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: _secondaryText,
+                          fontFamily: 'Agency',
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 16,
+                      color: _secondaryText,
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: _isDark
-                          ? AppColors.bgDark.withOpacity(0.75)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      color: _accent.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.medical_services_outlined,
-                          size: 16,
-                          color: _secondaryText,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Select medical specialty',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: _secondaryText,
-                              fontFamily: 'Agency',
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: Icon(selectedItem.icon, size: 14, color: _accent),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      selectedItem.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _accent,
+                        fontFamily: 'Agency',
+                      ),
                     ),
-                  );
-                }
-
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
                   ),
-                  decoration: BoxDecoration(
-                    color: _isDark
-                        ? Colors.blue.withOpacity(0.12)
-                        : Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _specialtyController.clear();
+                        _selectedSpecialtyId = null;
+                      });
+                      _applyFilters();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 12,
+                        color: Colors.red,
+                      ),
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        selectedItem.icon,
-                        color: selectedItem.color,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          selectedItem.name,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _primaryText,
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _specialtyController.clear();
-                            _selectedSpecialtyId = null;
-                          });
-                          _applyFilters();
-                        },
-                        child: Icon(
-                          Icons.close,
-                          size: 16,
-                          color: _secondaryText,
-                        ),
-                      ),
-                    ],
+                ],
+              );
+            },
+            listItemBuilder: (context, item, isSelected, onItemSelect) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 2,
                   ),
-                );
-              },
-              listItemBuilder: (context, item, isSelected, onItemSelect) {
-                return ListTile(
-                  leading: Icon(item.icon, color: item.color, size: 16),
-                  title: Text(item.name, style: TextStyle(color: _primaryText)),
+                  leading: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: isSelected ? _accent.withOpacity(0.12) : _iconBg,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      item.icon,
+                      size: 13,
+                      color: isSelected ? _accent : _secondaryText,
+                    ),
+                  ),
+                  title: Text(
+                    item.name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontFamily: 'Agency',
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                      color: isSelected ? _accent : _primaryText,
+                    ),
+                  ),
                   trailing: isSelected
-                      ? const Icon(Icons.check, color: Colors.blue)
+                      ? Icon(Icons.check_rounded, size: 14, color: _accent)
                       : null,
-                );
-              },
-              decoration: CustomDropdownDecoration(
-                closedFillColor: _cardBg,
-                expandedFillColor: _isDark
-                    ? AppColors.surfaceDark
-                    : Colors.grey.shade50,
-                closedBorderRadius: BorderRadius.circular(12),
-                expandedBorderRadius: BorderRadius.circular(12),
-                closedBorder: Border.all(color: _borderColor),
-                expandedBorder: Border.all(
-                  color: _isDark
-                      ? Colors.white.withOpacity(0.12)
-                      : Colors.grey.shade300,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  selected: isSelected,
+                  selectedTileColor: _accent.withOpacity(0.06),
+                ),
+              );
+            },
+            decoration: CustomDropdownDecoration(
+              closedFillColor: _cardBg,
+              expandedFillColor: _cardBg,
+              closedBorderRadius: BorderRadius.circular(14),
+              expandedBorderRadius: BorderRadius.circular(14),
+              closedBorder: Border.all(color: _borderColor),
+              expandedBorder: Border.all(color: _borderColor),
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: _secondaryText,
+                fontFamily: 'Agency',
+              ),
+              searchFieldDecoration: SearchFieldDecoration(
+                fillColor: _inputFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: _borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: _accent, width: 1.5),
                 ),
                 hintStyle: TextStyle(
                   fontSize: 12,
                   color: _secondaryText,
+                  fontFamily: 'Agency',
+                ),
+                textStyle: TextStyle(
+                  fontSize: 13,
+                  color: _primaryText,
                   fontFamily: 'Agency',
                 ),
               ),
@@ -440,6 +398,255 @@ class _FeedScreenState extends State<FeedScreen> {
           ),
         );
       },
+    );
+  }
+
+  // ─── Feed list ────────────────────────────────────────────────────────────
+  Widget _buildFeed() {
+    return BlocBuilder<PostBloc, PostState>(
+      builder: (context, state) {
+        if (state is PostLoading) {
+          return Center(child: CustomSpinner(size: 36, color: _accent));
+        }
+
+        if (state is PostError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: _cardBg,
+                      shape: BoxShape.circle,
+                      boxShadow: [_cardShadow],
+                    ),
+                    child: Icon(
+                      Icons.wifi_off_rounded,
+                      size: 36,
+                      color: _secondaryText,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    state.message,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: _secondaryText,
+                      fontFamily: 'Agency',
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: _applyFilters,
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: const Text(
+                      'إعادة المحاولة',
+                      style: TextStyle(fontFamily: 'Agency'),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _accent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (state is PostLoaded) {
+          return RefreshIndicator(
+            color: _accent,
+            onRefresh: () async => _applyFilters(),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+              physics: const BouncingScrollPhysics(),
+              children: [
+                const InfoBanner(),
+                const SizedBox(height: 12),
+                // Count pill
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _accent.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: _accent.withOpacity(0.20)),
+                    ),
+                    child: Text(
+                      '${state.totalCount} مقال',
+                      textDirection: TextDirection.rtl,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _accent,
+                        fontFamily: 'Agency',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...state.posts.map((post) => PostCard(post: post)),
+                if (state.hasNextPage)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          context.read<PostBloc>().add(
+                            FetchPostsEvent(
+                              params: state.activeParams.copyWith(
+                                page: state.currentPage + 1,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.expand_more_rounded,
+                          size: 18,
+                          color: _accent,
+                        ),
+                        label: Text(
+                          'تحميل المزيد',
+                          style: TextStyle(
+                            fontFamily: 'Agency',
+                            color: _accent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: _accent.withOpacity(0.35)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }
+
+        return const SizedBox();
+      },
+    );
+  }
+
+  // ─── Filter sheet ─────────────────────────────────────────────────────────
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _cardBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: _borderColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _iconBg,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.tune_rounded, size: 16, color: _accent),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'فلترة',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: _primaryText,
+                    fontFamily: 'Cotta',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: _inputFill,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _borderColor),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'البوستات المعلقة فقط',
+                    textDirection: TextDirection.rtl,
+                    style: TextStyle(
+                      color: _primaryText,
+                      fontFamily: 'Agency',
+                      fontSize: 14,
+                    ),
+                  ),
+                  Switch(value: false, onChanged: (_) {}, activeColor: _accent),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _applyFilters();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _accent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'تطبيق',
+                  style: TextStyle(
+                    fontFamily: 'Agency',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

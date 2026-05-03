@@ -35,9 +35,9 @@ class _SlotsSectionState extends State<SlotsSection> {
 
   Color get _pageBg => _isDark ? AppColors.bgDark : Colors.grey.shade100;
   Color get _cardBg => _isDark ? AppColors.surfaceDark : Colors.white;
-  Color get _primaryText => _isDark ? AppColors.textLight : Colors.black87;
+  Color get _primaryText => _isDark ? AppColors.textDark : AppColors.textLight;
   Color get _secondaryText =>
-      _isDark ? AppColors.textLight.withOpacity(0.72) : Colors.grey.shade700;
+      _isDark ? AppColors.textDark : Colors.grey.shade700;
   Color get _borderColor =>
       _isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade200;
   Color get _accent => _isDark ? Colors.blue.shade200 : const Color(0xff0861dd);
@@ -148,7 +148,7 @@ class _SlotsSectionState extends State<SlotsSection> {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
-                      color: isActive ? _cardBg : Colors.grey,
+                      color: isActive ? Colors.white : Colors.grey,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -157,7 +157,7 @@ class _SlotsSectionState extends State<SlotsSection> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      color: isActive ? _cardBg : Colors.black87,
+                      color: isActive ? Colors.white : Colors.grey,
                     ),
                   ),
                 ],
@@ -344,7 +344,7 @@ class _SlotsSectionState extends State<SlotsSection> {
                     ? Colors.grey.shade400
                     : isSelected
                     ? Colors.white
-                    : Colors.black87,
+                    : Colors.grey.shade700,
                 decoration: isBooked ? TextDecoration.lineThrough : null,
                 decorationColor: Colors.grey.shade400,
               ),
@@ -355,10 +355,10 @@ class _SlotsSectionState extends State<SlotsSection> {
               style: TextStyle(
                 fontSize: 11,
                 color: isBooked
-                    ? _borderColor
+                    ? Colors.grey.shade400
                     : isSelected
-                    ? _cardBg
-                    : _secondaryText,
+                    ? Colors.white
+                    : Colors.grey.shade700,
               ),
             ),
             const SizedBox(height: 5),
@@ -440,7 +440,7 @@ class _SlotsSectionState extends State<SlotsSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               "Select Exact Hour",
@@ -448,7 +448,7 @@ class _SlotsSectionState extends State<SlotsSection> {
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Agency',
-                color: Colors.black87,
+                color: _primaryText,
               ),
             ),
           ),
@@ -503,7 +503,9 @@ class _SlotsSectionState extends State<SlotsSection> {
                         fontWeight: isHourSelected
                             ? FontWeight.bold
                             : FontWeight.normal,
-                        color: isHourSelected ? _cardBg : Colors.black87,
+                        color: isHourSelected
+                            ? Colors.white
+                            : _secondaryText.withOpacity(0.5),
                       ),
                     ),
                   ),

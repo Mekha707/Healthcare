@@ -4,7 +4,7 @@ class RegisterService {
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl:
-          'https://healthcare-try1.free.beeceptor.com', // استبدله برابط السيرفر الخاص بك
+          'https://healthcare52.runasp.net/', // استبدله برابط السيرفر الخاص بك
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
       headers: {

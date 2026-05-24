@@ -1,5 +1,5 @@
 // lib/Pages/AppointmentDetails/appointment_details_page.dart
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously, unused_local_variable
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously, unused_local_variable, curly_braces_in_flow_control_structures
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

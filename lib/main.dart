@@ -8,8 +8,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:healthcareapp_try1/API/auth_service.dart';
 import 'package:healthcareapp_try1/API/chat_service.dart';
+import 'package:healthcareapp_try1/API/notification_service.dart';
 import 'package:healthcareapp_try1/API/post_service.dart';
 import 'package:healthcareapp_try1/API/profile_service.dart';
+import 'package:healthcareapp_try1/API/signal_service.dart';
 import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/CityCubit/city_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/LoginBloc/login_bloc.dart';
@@ -56,7 +58,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final initialTheme = await ThemeCubit.loadInitialTheme();
-
+  try {
+    // 2. تشغيل خدمة الإشعارات المحلية
+    await NotificationService.init();
+    print("تم تهيئة نظام الإشعارات بنجاح ✅");
+  } catch (e) {
+    print("خطأ أثناء تهيئة الإشعارات: $e ❌");
+  }
   bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
   final authService = AuthService();
@@ -123,6 +131,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
+    _initChatNotifications();
     _appLinks.uriLinkStream.listen((uri) {
       if (uri.host == 'confirm-email') {
         final userId = uri.queryParameters['userId'];
@@ -133,6 +142,16 @@ class _MainAppState extends State<MainApp> {
         );
       }
     });
+  }
+
+  Future<void> _initChatNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
+    final userId = prefs.getString('userId') ?? '';
+
+    if (token.isEmpty) return;
+
+    await SignalRService().initHub(token, currentUserId: userId);
   }
 
   @override

@@ -77,7 +77,7 @@ class _HomepageContentState extends State<HomePageContent> {
 
               const SizedBox(height: 30),
 
-              _buildTomorrowAppointmentsCard(isTablet, isDark),
+              _buildAppointmentsSection(isTablet, isDark),
               const SizedBox(height: 30),
 
               _buildSectionHeader("Browse By Specialty", isTablet, null),
@@ -253,159 +253,217 @@ class _HomepageContentState extends State<HomePageContent> {
     );
   }
 
-  Widget _buildTomorrowAppointmentsCard(bool isTablet, bool isDark) {
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
+  Widget _buildAppointmentsSection(bool isTablet, bool isDark) {
+    final today = DateTime.now();
+    final tomorrow = today.add(const Duration(days: 1));
+
+    return BlocBuilder<AppointmentsCubit, AppointmentsState>(
+      builder: (context, state) {
+        final allAppointments = state is AppointmentsSuccess
+            ? state.data
+            : <AppointmentModel>[];
+
+        final todayList = _getAppointmentsForDay(allAppointments, today);
+        final tomorrowList = _getAppointmentsForDay(allAppointments, tomorrow);
+
+        return Column(
+          children: [
+            _buildDayCard(
+              label: "Today",
+              date: today,
+              appointments: todayList,
+              isLoading: state is AppointmentsLoading,
+              isDark: isDark,
+              accentColor: const Color(0xff5b47e0),
+              iconBg: const Color(0xffede9fc),
+              iconColor: const Color(0xff5b47e0),
+            ),
+            const SizedBox(height: 16),
+            _buildDayCard(
+              label: "Tomorrow",
+              date: tomorrow,
+              appointments: tomorrowList,
+              isLoading: state is AppointmentsLoading,
+              isDark: isDark,
+              accentColor: const Color(0xff0ea5e9),
+              iconBg: const Color(0xffe0f2fe),
+              iconColor: const Color(0xff0ea5e9),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDayCard({
+    required String label,
+    required DateTime date,
+    required List<AppointmentModel> appointments,
+    required bool isLoading,
+    required bool isDark,
+    required Color accentColor,
+    required Color iconBg,
+    required Color iconColor,
+  }) {
     final cardColor = isDark ? AppColors.surfaceDark : Colors.white;
-    final borderColor = isDark
-        ? Colors.blue.shade200.withOpacity(0.18)
-        : const Color(0xff0861dd).withOpacity(0.12);
-    final iconBg = isDark
-        ? Colors.blue.shade300.withOpacity(0.15)
-        : const Color(0xffe9f3ff);
     final subtleText = isDark
-        ? AppColors.textDark.withOpacity(0.72)
-        : AppColors.textLight.withOpacity(0.7);
+        ? AppColors.textDark.withOpacity(0.6)
+        : Colors.black.withOpacity(0.45);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accentColor.withOpacity(isDark ? 0.2 : 0.12)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.16 : 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+            color: accentColor.withOpacity(isDark ? 0.08 : 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: BlocBuilder<AppointmentsCubit, AppointmentsState>(
-        builder: (context, state) {
-          final tomorrowAppointments = state is AppointmentsSuccess
-              ? _getTomorrowAppointments(state.data)
-              : <AppointmentModel>[];
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: iconBg,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(
-                      Icons.event_available_outlined,
-                      color: isDark ? Colors.blue.shade200 : AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Tomorrow's Appointments",
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          DateFormat('EEEE, dd MMM').format(tomorrow),
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(color: subtleText),
-                        ),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => MyBookingPage()),
-                      );
-                    },
-                    child: Text(
-                      "View all",
-                      style: TextStyle(color: subtleText),
-                    ),
-                  ),
-                ],
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            decoration: BoxDecoration(
+              color: accentColor.withOpacity(isDark ? 0.12 : 0.05),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
               ),
-              const SizedBox(height: 18),
-              if (state is AppointmentsLoading)
-                const Center(child: LinearProgressIndicator(color: Colors.grey))
-              else if (tomorrowAppointments.isEmpty)
+            ),
+            child: Row(
+              children: [
                 Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.bgDark.withOpacity(0.45)
-                        : const Color(0xfff7f9fc),
-                    borderRadius: BorderRadius.circular(18),
+                    color: isDark ? accentColor.withOpacity(0.2) : iconBg,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(
+                  child: Icon(Icons.event_rounded, color: iconColor, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.calendar_today_outlined,
-                        color: subtleText,
-                        size: 22,
+                      Text(
+                        label,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "No appointments scheduled for tomorrow.",
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(color: subtleText),
-                        ),
+                      Text(
+                        DateFormat('EEEE, dd MMM yyyy').format(date),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: subtleText),
                       ),
                     ],
                   ),
-                )
-              else ...[
-                ...tomorrowAppointments
-                    .take(3)
-                    .map((item) => _buildAppointmentPreviewTile(item, isDark)),
-                if (tomorrowAppointments.length > 3) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    "+${tomorrowAppointments.length - 3} more appointments tomorrow",
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: subtleText,
-                      fontWeight: FontWeight.w600,
+                ),
+                // Badge count
+                if (!isLoading)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      "${appointments.length}",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ],
               ],
-            ],
-          );
-        },
+            ),
+          ),
+
+          // Body
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: isLoading
+                ? LinearProgressIndicator(
+                    color: accentColor,
+                    backgroundColor: accentColor.withOpacity(0.1),
+                  )
+                : appointments.isEmpty
+                ? _buildEmptyDay(subtleText)
+                : Column(
+                    children: [
+                      ...appointments
+                          .take(3)
+                          .map((a) => _buildAppointmentPreviewTile(a, isDark)),
+                      if (appointments.length > 3)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MyBookingPage(),
+                              ),
+                            ),
+                            child: Text(
+                              "+${appointments.length - 3} more",
+                              style: TextStyle(
+                                color: accentColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
+        ],
       ),
     );
   }
 
-  List<AppointmentModel> _getTomorrowAppointments(
+  Widget _buildEmptyDay(Color subtleText) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Icon(Icons.calendar_today_outlined, color: subtleText, size: 18),
+          const SizedBox(width: 10),
+          Text(
+            "No appointments scheduled",
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: subtleText),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<AppointmentModel> _getAppointmentsForDay(
     List<AppointmentModel> items,
+    DateTime day,
   ) {
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
     return items.where((item) {
-      final parsedDate = _parseAppointmentDate(item.date, item.time);
-      if (parsedDate == null) return false;
-      return parsedDate.year == tomorrow.year &&
-          parsedDate.month == tomorrow.month &&
-          parsedDate.day == tomorrow.day;
+      final parsed = _parseAppointmentDate(item.date, item.time);
+      if (parsed == null) return false;
+      return parsed.year == day.year &&
+          parsed.month == day.month &&
+          parsed.day == day.day;
     }).toList()..sort((a, b) {
-      final first = _parseAppointmentDate(a.date, a.time);
-      final second = _parseAppointmentDate(b.date, b.time);
-      if (first == null || second == null) return 0;
-      return first.compareTo(second);
+      final fa = _parseAppointmentDate(a.date, a.time);
+      final fb = _parseAppointmentDate(b.date, b.time);
+      if (fa == null || fb == null) return 0;
+      return fa.compareTo(fb);
     });
   }
 
@@ -631,7 +689,7 @@ class _HomepageContentState extends State<HomePageContent> {
             itemCount: specialties.length > 9 ? 9 : specialties.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              crossAxisSpacing: 1,
+              crossAxisSpacing: 3,
               mainAxisSpacing: 20,
               childAspectRatio: 0.9,
             ),

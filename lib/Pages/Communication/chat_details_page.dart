@@ -1,5 +1,7 @@
 // ignore_for_file: unnecessary_null_comparison, dead_code
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:healthcareapp_try1/API/chat_service.dart';
@@ -30,6 +32,7 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late MessageBloc _bloc;
+  StreamSubscription<Message>? _messageSubscription;
   String myid = "";
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
@@ -58,9 +61,15 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
     myid = prefs.getString('userId') ?? "";
     final token = prefs.getString('token') ?? "";
 
-    await _signalRService.initHub(token, (newMessageJson) {
-      final newMessage = Message.fromJson(newMessageJson);
-      if (mounted) {
+    await _signalRService.initHub(token, currentUserId: myid);
+    _signalRService.setActiveChat(widget.chatId);
+
+    await _messageSubscription?.cancel();
+    _messageSubscription = _signalRService.messagesStream.listen((newMessage) {
+      final belongsToCurrentChat =
+          newMessage.chatId == null || newMessage.chatId == widget.chatId;
+
+      if (mounted && belongsToCurrentChat) {
         _bloc.add(ReceiveNewMessage(newMessage));
       }
     });
@@ -70,7 +79,8 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
 
   @override
   void dispose() {
-    _signalRService.stopConnection();
+    _signalRService.setActiveChat(null);
+    _messageSubscription?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -174,6 +184,10 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
   }
 
   Widget _buildMessageBubble(Message msg, bool isMe) {
+    final timeText = msg.createdAt.length >= 16
+        ? msg.createdAt.substring(11, 16)
+        : "";
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -218,7 +232,7 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              msg.createdAt != null ? msg.createdAt.substring(11, 16) : "",
+              timeText,
               style: TextStyle(
                 fontSize: 10,
                 color: isMe ? Colors.white.withOpacity(0.6) : _secondaryText,

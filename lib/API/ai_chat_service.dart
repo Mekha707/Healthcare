@@ -6,7 +6,7 @@ import 'package:healthcareapp_try1/Models/AI/ai_chat_response.dart';
 class AiChatService {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: "https://healthcare52.runasp.net/",
+      baseUrl: "https://healthcare52.runasp.net",
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
     ),
@@ -28,7 +28,7 @@ class AiChatService {
       print("Body: $body");
 
       final response = await _dio.post(
-        "api/Patients/ai-olama-model-medgemma",
+        "/api/Patients/ai-model-medgemma",
         data: body,
         options: Options(
           headers: {

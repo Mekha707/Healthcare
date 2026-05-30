@@ -35,8 +35,7 @@ dependencies:
   file_picker: ^8.0.0
   signalr_core: ^1.1.2
   flutter_local_notifications: ^17.2.4
-
-
+  flutter_launcher_icons: ^0.13.1
 
 dev_dependencies:
   flutter_test:
@@ -48,26 +47,31 @@ flutter_native_splash:
   image: assets/images/GP_Logo-removebg-preview.png
   android: true
   ios: true
-  
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/App-icon.png"
+
 flutter:
   fonts:
     - family: Cotta
       fonts:
         - asset: assets/fonts/Cotta Free.otf
-    - family : Agency
-      fonts :
+    - family: Agency
+      fonts:
         - asset: assets/fonts/agency.otf
-    - family : BungeeSpice
-      fonts :
+    - family: BungeeSpice
+      fonts:
         - asset: assets/fonts/BungeeSpice-Regular.ttf
-    - family : IosevkaCharonMono
-      fonts :
+    - family: IosevkaCharonMono
+      fonts:
         - asset: assets/fonts/IosevkaCharonMono-Regular.ttf
-    - family : Pacifico
-      fonts :
+    - family: Pacifico
+      fonts:
         - asset: assets/fonts/Pacifico-Regular.ttf
-    - family : ElMessiri
-      fonts :
+    - family: ElMessiri
+      fonts:
         - asset: assets\fonts\ElMessiri-VariableFont_wght.ttf
   uses-material-design: true
   assets:
@@ -75,4 +79,3 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/animations/
-

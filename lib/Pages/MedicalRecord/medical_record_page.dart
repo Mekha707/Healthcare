@@ -924,8 +924,7 @@ class _MedicalRecordPageState extends State<MedicalRecordPage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pop(context);
+                      if (Navigator.canPop(context)) Navigator.pop(context);
                       context.read<NavigationBloc>().add(
                         TabChanged(1, initialTestIds: [t.testId]),
                       );

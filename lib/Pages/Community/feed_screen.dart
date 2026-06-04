@@ -211,6 +211,7 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   // ─── Specialty dropdown ───────────────────────────────────────────────────
+
   Widget _buildSpecialtyDropdown() {
     return BlocBuilder<SpecialtyBloc, SpecialtyState>(
       builder: (context, state) {
@@ -227,6 +228,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 ? 'Loading...'
                 : 'Select medical specialty',
             excludeSelected: false,
+            searchHintText: 'ابحث في التخصصات...',
             onChanged: (Specialty? value) {
               setState(() => _selectedSpecialtyId = value?.id);
               if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -276,10 +278,14 @@ class _FeedScreenState extends State<FeedScreen> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: _accent.withOpacity(0.12),
+                      color: selectedItem.color.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(selectedItem.icon, size: 14, color: _accent),
+                    child: Icon(
+                      selectedItem.icon,
+                      size: 14,
+                      color: selectedItem.color,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -330,13 +336,15 @@ class _FeedScreenState extends State<FeedScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: isSelected ? _accent.withOpacity(0.12) : _iconBg,
+                      color: isSelected
+                          ? item.color.withOpacity(0.15)
+                          : _iconBg,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       item.icon,
                       size: 13,
-                      color: isSelected ? _accent : _secondaryText,
+                      color: isSelected ? item.color : _secondaryText,
                     ),
                   ),
                   title: Text(
@@ -347,17 +355,17 @@ class _FeedScreenState extends State<FeedScreen> {
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.normal,
-                      color: isSelected ? _accent : _primaryText,
+                      color: isSelected ? item.color : _primaryText,
                     ),
                   ),
                   trailing: isSelected
-                      ? Icon(Icons.check_rounded, size: 14, color: _accent)
+                      ? Icon(Icons.check_rounded, size: 14, color: item.color)
                       : null,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                   selected: isSelected,
-                  selectedTileColor: _accent.withOpacity(0.06),
+                  selectedTileColor: item.color.withOpacity(0.06),
                 ),
               );
             },

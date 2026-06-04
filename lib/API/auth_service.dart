@@ -213,6 +213,7 @@ class AuthService {
   // ✅ Helper خاص لحفظ بيانات المستخدم
   Future<void> _saveUserData(LoginResponse user) async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
     await prefs.setString('token', user.token);
     await prefs.setString('userId', user.id);
     await prefs.setString('userEmail', user.email);

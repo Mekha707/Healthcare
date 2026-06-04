@@ -17,7 +17,6 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1600),
@@ -37,6 +36,8 @@ class _SplashScreenState extends State<SplashScreen>
 
     Future.delayed(const Duration(milliseconds: 2800), () {
       if (!mounted) return;
+      print("Logged in : ${widget.isLoggedIn}");
+
       Navigator.pushReplacementNamed(
         context,
         widget.isLoggedIn ? 'Home' : 'Login',

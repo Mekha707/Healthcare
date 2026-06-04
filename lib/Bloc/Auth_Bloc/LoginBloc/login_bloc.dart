@@ -10,17 +10,6 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   LoginBloc(this.authService) : super(LoginInitial()) {
     // داخل login_bloc.dart
 
-    // on<LoginSubmitted>((event, emit) async {
-    //   emit(LoginLoading());
-    //   try {
-    //     // AuthService هي اللي بتخزن، الـ Bloc بس بيستقبل النتيجة
-    //     final user = await authService.login(event.email, event.password);
-    //     emit(LoginSuccess(user: user));
-    //   } catch (e) {
-    //     emit(LoginFailure(error: e.toString()));
-    //   }
-    // });
-
     on<LoginSubmitted>((event, emit) async {
       emit(LoginLoading());
       try {

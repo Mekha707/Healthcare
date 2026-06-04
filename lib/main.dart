@@ -66,6 +66,7 @@ void main() async {
     print("خطأ أثناء تهيئة الإشعارات: $e ❌");
   }
   bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+  print("isLoggedIn عند بدء التطبيق = $isLoggedIn");
 
   final authService = AuthService();
 
@@ -233,7 +234,7 @@ class _MainAppState extends State<MainApp> {
               }
             },
 
-            initialRoute: 'Home',
+            initialRoute: '/',
           ),
         );
       },

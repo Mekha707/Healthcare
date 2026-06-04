@@ -1829,30 +1829,6 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
     return 3;
   }
 
-  // String normalizeService(String? service) {
-  //   switch (service) {
-  //     case "clinic":
-  //     case "Clinic":
-  //     case "Clinic Visit":
-  //       return "Clinic Visit";
-
-  //     case "home":
-  //     case "Home":
-  //     case "Home Visit":
-  //       return "Home Visit";
-
-  //     case "online":
-  //     case "Online":
-  //       return "Online";
-
-  //     case "hourly":
-  //     case "Hourly Rate":
-  //       return "Hourly Rate";
-
-  //     default:
-  //       return "";
-  //   }
-  // }
 
   String normalizeService(String? service) {
     // للمعمل: ابدأ دايمًا من Step 1 (اختيار نوع الزيارة)

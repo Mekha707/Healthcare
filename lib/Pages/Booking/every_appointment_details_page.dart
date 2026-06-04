@@ -1,12 +1,17 @@
 // lib/Pages/AppointmentDetails/appointment_details_page.dart
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, unused_local_variable, curly_braces_in_flow_control_structures
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
+import 'package:healthcareapp_try1/API/cancellation_repository.dart';
+import 'package:healthcareapp_try1/API/cancellation_service.dart';
 import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/API/prepare_meeting_service.dart';
 import 'package:healthcareapp_try1/Bloc/Appointment_details_/appointment_details_cubit.dart';
+import 'package:healthcareapp_try1/Bloc/MyBookingBloc/cancellation_bloc.dart';
+import 'package:healthcareapp_try1/Bloc/MyBookingBloc/mybooking_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/Prepare_Meeting/prepare_meeting_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/Prepare_Meeting/prepare_meeting_events.dart';
 import 'package:healthcareapp_try1/Bloc/Prepare_Meeting/prepare_meeting_state.dart';
@@ -117,7 +122,7 @@ class AppointmentDetailsPage extends StatelessWidget {
                       'Payment',
                       d.paymentType,
                     ),
-                    if (d.notes != null)
+                    if (d.notes != null && d.notes!.isNotEmpty)
                       _rowTile(context, Icons.notes_rounded, 'Notes', d.notes!),
                   ],
                 ),
@@ -176,6 +181,15 @@ class AppointmentDetailsPage extends StatelessWidget {
                   ),
 
                 if (d.review != null) _reviewCard(context, d.review!),
+                _cancelButton(
+                  context,
+                  appointmentId: d.id,
+                  appointmentType: 'Doctor',
+                  status: d.status,
+                  date: d.date,
+                  startTime: d.startTime,
+                  isOnline: d.appointmentType == 'Online', // ← الشرط المهم
+                ),
 
                 _reviewButton(
                   context,
@@ -258,11 +272,22 @@ class AppointmentDetailsPage extends StatelessWidget {
                         'Hours',
                         '${n.hours}h',
                       ),
-                    if (n.notes != null)
+                    if (n.notes != null && n.notes!.isNotEmpty)
                       _rowTile(context, Icons.notes_rounded, 'Notes', n.notes!),
                   ],
                 ),
                 if (n.review != null) _reviewCard(context, n.review!),
+
+                _cancelButton(
+                  context,
+                  appointmentId: n.id,
+                  appointmentType: 'Nurse',
+                  status: n.status,
+                  date: n.date,
+                  startTime: n.shiftStartTime,
+                  isOnline: false,
+                ),
+
                 _reviewButton(
                   context,
                   targetId: n.nurseId,
@@ -315,7 +340,7 @@ class AppointmentDetailsPage extends StatelessWidget {
                         'Address',
                         l.address!,
                       ),
-                    if (l.notes != null)
+                    if (l.notes != null && l.notes!.isNotEmpty)
                       _rowTile(context, Icons.notes_rounded, 'Notes', l.notes!),
                   ],
                 ),
@@ -330,7 +355,17 @@ class AppointmentDetailsPage extends StatelessWidget {
                           .toList(),
                     ),
                   ),
+
                 if (l.review != null) _reviewCard(context, l.review!),
+                _cancelButton(
+                  context,
+                  appointmentId: l.id,
+                  appointmentType: 'Lab',
+                  status: l.status,
+                  date: l.date,
+                  startTime: '00:00', // Lab مش بيبقى ليه startTime غالباً
+                  isOnline: false,
+                ),
                 _reviewButton(
                   context,
                   targetId: l.labId,
@@ -1027,6 +1062,258 @@ class AppointmentDetailsPage extends StatelessWidget {
     );
   }
 
+  // ── Can Cancel? ───────────────────────────────────────────────────────────
+  // bool _canCancel(
+  //   String status,
+  //   String date,
+  //   String startTime, {
+  //   bool isOnline = false,
+  // }) {
+  //   if (status != 'Pending' && status != 'Confirmed') return false;
+  //   if (isOnline) return false;
+  //   if (startTime == '00:00' || startTime.isEmpty) return true;
+
+  //   try {
+  //     final dp = date.split('-'), sp = startTime.split(':');
+  //     if (dp.length < 3 || sp.length < 2) return false;
+  //     final appointmentStart = DateTime(
+  //       int.parse(dp[0]),
+  //       int.parse(dp[1]),
+  //       int.parse(dp[2]),
+  //       int.parse(sp[0]),
+  //       int.parse(sp[1]),
+  //     );
+  //     final diff = appointmentStart.difference(DateTime.now());
+  //     if (diff.inHours < 8) return false;
+  //   } catch (_) {
+  //     return false;
+  //   }
+
+  //   return true;
+  // }
+  bool _canCancel(
+    String status,
+    String date,
+    String startTime, {
+    bool isOnline = false,
+  }) {
+    print(
+      '_canCancel → status: $status | date: $date | startTime: $startTime | isOnline: $isOnline',
+    );
+
+    if (status != 'Pending' && status != 'Confirmed') {
+      print('❌ status مش Pending/Confirmed');
+      return false;
+    }
+    if (isOnline) {
+      print('❌ isOnline = true');
+      return false;
+    }
+    if (startTime == '00:00' || startTime.isEmpty) {
+      print('✅ startTime فاضي → true');
+      return true;
+    }
+
+    try {
+      final dp = date.split('-'), sp = startTime.split(':');
+      if (dp.length < 3 || sp.length < 2) {
+        print('❌ date/time format غلط');
+        return false;
+      }
+      final appointmentStart = DateTime(
+        int.parse(dp[0]),
+        int.parse(dp[1]),
+        int.parse(dp[2]),
+        int.parse(sp[0]),
+        int.parse(sp[1]),
+      );
+      final diff = appointmentStart.difference(DateTime.now());
+      print('⏰ diff.inHours: ${diff.inHours}');
+      if (diff.inHours < 8) {
+        print('❌ أقل من 8 ساعات');
+        return false;
+      }
+    } catch (e) {
+      print('❌ exception: $e');
+      return false;
+    }
+
+    print('✅ يظهر الزرار');
+    return true;
+  }
+
+  // ── Cancel Button ─────────────────────────────────────────────────────────
+  Widget _cancelButton(
+    BuildContext context, {
+    required String appointmentId,
+    required String appointmentType,
+    required String status,
+    required String date,
+    required String startTime,
+    bool isOnline = false,
+  }) {
+    if (!_canCancel(status, date, startTime, isOnline: isOnline)) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: BlocProvider(
+          create: (_) => CancellationBloc(
+            repository: CancellationRepository(
+              service: CancellationService(
+                Dio()
+                  ..options = BaseOptions(
+                    baseUrl: 'https://healthcare52.runasp.net',
+                  ),
+              ),
+            ),
+          ),
+          child: BlocConsumer<CancellationBloc, CancellationState>(
+            listener: (ctx, state) {
+              if (state is CancellationSuccess) {
+                showAppToast(context, 'تم إلغاء الموعد بنجاح ✓');
+                Navigator.pop(context); // يرجع لـ MyBookingPage
+                // refresh الـ list
+                Future.microtask(() async {
+                  final prefs = await SharedPreferences.getInstance();
+                  final token = prefs.getString('token') ?? '';
+                  context.read<AppointmentsCubit>().getAllUserAppointments(
+                    token,
+                  );
+                });
+              }
+              if (state is CancellationFailure) {
+                showAppToast(context, state.error, isError: true);
+              }
+            },
+            builder: (ctx, state) {
+              final isLoading = state is CancellationLoading;
+              return OutlinedButton.icon(
+                onPressed: isLoading
+                    ? null
+                    : () => _showCancelConfirmDialog(
+                        context,
+                        ctx,
+                        appointmentId: appointmentId,
+                        appointmentType: appointmentType,
+                      ),
+                icon: isLoading
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.red.shade400,
+                        ),
+                      )
+                    : Icon(
+                        Icons.cancel_outlined,
+                        size: 16,
+                        color: Colors.red.shade400,
+                      ),
+                label: Text(
+                  isLoading
+                      ? 'Cancellation in progress...'
+                      : 'Cancel Appointment',
+                  style: TextStyle(
+                    color: Colors.red.shade400,
+                    fontFamily: 'Agency',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(
+                    color: Colors.red.shade300.withOpacity(0.50),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Confirm dialog ────────────────────────────────────────────────────────
+  void _showCancelConfirmDialog(
+    BuildContext pageContext,
+    BuildContext blocContext, {
+    required String appointmentId,
+    required String appointmentType,
+  }) {
+    showDialog(
+      context: pageContext,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _cardBg(pageContext),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Cancellation Confirmation',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Cotta',
+            color: _primary(pageContext),
+            fontSize: 16,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to cancel this appointment?',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Agency',
+            color: _secondary(pageContext),
+            fontSize: 13,
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'No',
+              style: TextStyle(
+                fontFamily: 'Agency',
+                color: _secondary(pageContext),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              blocContext.read<CancellationBloc>().add(
+                CancelAppointmentRequested(
+                  appointmentId: appointmentId,
+                  appointmentType: appointmentType,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Cancel Appointment',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'Agency',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Status badge ──────────────────────────────────────────────────────────
   Widget _statusBadge(
     BuildContext context,
@@ -1172,8 +1459,8 @@ class AppointmentDetailsPage extends StatelessWidget {
                     Navigator.pop(ctx);
                     showToast(
                       existingReview != null
-                          ? 'تم تعديل التقييم بنجاح'
-                          : 'تم إرسال التقييم بنجاح',
+                          ? 'The assessment was successfully modified.'
+                          : 'The assessment was successfully sent',
                     );
                   });
                 }
@@ -1275,7 +1562,7 @@ class AppointmentDetailsPage extends StatelessWidget {
                         fontSize: 14,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'اكتب تعليقك هنا...',
+                        hintText: 'Write Your Review Here..',
                         hintTextDirection: TextDirection.rtl,
                         hintStyle: TextStyle(
                           color: _secondary(ctx),
